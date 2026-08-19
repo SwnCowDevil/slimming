@@ -4,6 +4,7 @@ from app.auth.router import router as auth_router
 from app.auth.service import HttpWechatGateway, WechatGateway
 from app.core.config import Settings, get_settings
 from app.profiles.router import router as profiles_router
+from app.foods.router import router as foods_router
 
 
 def create_app(
@@ -18,6 +19,7 @@ def create_app(
     )
     app.include_router(auth_router)
     app.include_router(profiles_router)
+    app.include_router(foods_router)
 
     @app.get("/health")
     def health() -> dict[str, str]:

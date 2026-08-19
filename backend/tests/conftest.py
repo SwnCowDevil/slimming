@@ -1,4 +1,5 @@
 from collections.abc import Iterator
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -32,12 +33,25 @@ def settings() -> Settings:
         wechat_app_id="test-app",
         wechat_app_secret="test-secret",
         enable_dev_auth=False,
+        tka_import_root=Path(__file__).parent / "foods" / "fixtures",
     )
 
 
 @pytest.fixture
 def wechat_gateway() -> FakeWechatGateway:
     return FakeWechatGateway()
+
+
+@pytest.fixture
+def db_session(settings: Settings) -> Iterator[Session]:
+    engine = create_engine(
+        settings.database_url,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(engine)
+    with Session(engine) as session:
+        yield session
 
 
 @pytest.fixture

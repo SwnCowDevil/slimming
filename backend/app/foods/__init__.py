@@ -1,0 +1,2 @@
+"""Food composition catalog."""
+
