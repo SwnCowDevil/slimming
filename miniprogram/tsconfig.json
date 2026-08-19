@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "CommonJS",
+    "strict": true,
+    "types": ["miniprogram-api-typings"],
+    "baseUrl": ".",
+    "paths": {
+      "@lspriv/wx-calendar/*": ["./node_modules/@lspriv/wx-calendar/dist/*"]
+    }
+  },
+  "include": ["**/*.ts"]
+}
+

@@ -1,0 +1,15 @@
+{
+  "name": "slimming-miniprogram",
+  "private": true,
+  "version": "0.1.0",
+  "dependencies": {
+    "@lspriv/wx-calendar": "1.8.4"
+  },
+  "devDependencies": {
+    "miniprogram-api-typings": "^4.0.0"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs"
+  }
+}
+
