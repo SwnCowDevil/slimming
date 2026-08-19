@@ -145,6 +145,7 @@ git commit -m "chore: scaffold secure slimming project"
 - Create: `backend/app/db/base.py`
 - Create: `backend/app/db/session.py`
 - Create: `backend/app/auth/schemas.py`
+- Create: `backend/app/auth/models.py`
 - Create: `backend/app/auth/service.py`
 - Create: `backend/app/auth/router.py`
 - Create: `backend/alembic.ini`
@@ -155,7 +156,7 @@ git commit -m "chore: scaffold secure slimming project"
 - Create: `backend/tests/auth/test_wechat_auth.py`
 
 **Interfaces:**
-- Produces: `create_app() -> FastAPI`、`get_session() -> Iterator[Session]`、`GET /health`、`POST /api/v1/auth/wechat`、`get_current_user() -> User`。
+- Produces: `create_app() -> FastAPI`、`get_session() -> Iterator[Session]`、`GET /health`、`POST /api/v1/auth/wechat`、`PATCH /api/v1/auth/me/wechat-profile`、`get_current_user() -> User`。
 - Consumes: Task 1 的配置和依赖。
 
 - [ ] **Step 1: 写健康检查失败测试**
@@ -169,6 +170,12 @@ def test_health(client):
 def test_dev_auth_is_only_available_when_enabled(client, settings):
     settings.enable_dev_auth = False
     assert client.post("/api/v1/auth/dev", json={"user_id": "demo"}).status_code == 404
+
+def test_same_openid_reuses_internal_user_id(client, wechat_gateway):
+    wechat_gateway.openid = "openid-123"
+    first = client.post("/api/v1/auth/wechat", json={"code": "code-a"}).json()
+    second = client.post("/api/v1/auth/wechat", json={"code": "code-b"}).json()
+    assert first["user_id"] == second["user_id"]
 ```
 
 - [ ] **Step 2: 运行测试并确认失败**
@@ -192,7 +199,7 @@ def create_app() -> FastAPI:
 app = create_app()
 ```
 
-配置字段使用 `SLIMMING_` 前缀：`DATABASE_URL`、`JWT_SECRET`、`WECHAT_APP_ID`、`WECHAT_APP_SECRET`、`ENABLE_DEV_AUTH`、`AI_BASE_URL`、`AI_MODEL`、`AI_API_KEY`、`MEDIA_ROOT`。微信登录服务用 `httpx` 调用 `jscode2session`，只存 `openid`/`unionid` 和内部用户 ID；开发态身份接口只有 `ENABLE_DEV_AUTH=true` 时注册。
+配置字段使用 `SLIMMING_` 前缀：`DATABASE_URL`、`JWT_SECRET`、`WECHAT_APP_ID`、`WECHAT_APP_SECRET`、`ENABLE_DEV_AUTH`、`AI_BASE_URL`、`AI_MODEL`、`AI_API_KEY`、`MEDIA_ROOT`。小程序先调用 `wx.login()` 取得临时 code，后端用 `httpx` 调用 `jscode2session`；以 `(app_id, openid)` 唯一索引查找身份，首次登录创建不可变的内部 UUID `users.id`，再次登录复用同一 ID。昵称、头像 URL 等公开资料只在用户点击授权按钮后通过独立接口保存，不把昵称当身份主键。所有个人业务表以 `user_id` 外键关联 `users.id`，查询必须同时带当前 `user_id` 条件；开发态身份接口只有 `ENABLE_DEV_AUTH=true` 时注册。
 
 - [ ] **Step 4: 创建空初始迁移并验证**
 
@@ -466,6 +473,7 @@ git commit -m "feat: add recipes AI drafts and dietitian requests"
 - Create: `miniprogram/app.wxss`
 - Create: `miniprogram/api/client.ts`
 - Create: `miniprogram/api/auth.ts`
+- Create: `miniprogram/state/session.ts`
 - Create: `miniprogram/config/env.ts`
 - Create: `miniprogram/styles/tokens.wxss`
 - Create: `miniprogram/pages/onboarding/welcome/*`
@@ -476,7 +484,7 @@ git commit -m "feat: add recipes AI drafts and dietitian requests"
 - Create: `miniprogram/tests/onboarding.test.mjs`
 
 **Interfaces:**
-- Produces: `request<T>(options: ApiRequestOptions) -> Promise<T>`、本地 token store、五步建档路由和 Design Token。
+- Produces: `request<T>(options: ApiRequestOptions) -> Promise<T>`、`loginWithWechat() -> Promise<Session>`、内部 `userId`/token store、用户主动授权后的微信公开资料同步、五步建档路由和 Design Token。
 - Consumes: Task 3 onboarding API；`superdesign/ob-*.html`。
 
 - [ ] **Step 1: 写建档状态机失败测试**
@@ -485,6 +493,7 @@ git commit -m "feat: add recipes AI drafts and dietitian requests"
 assert.deepEqual(nextStep({step: "goal", valid: true}), {step: "body"});
 assert.equal(canSubmitBody({heightCm: 168, weightKg: 82}), true);
 assert.equal(canSubmitBody({heightCm: 0, weightKg: 82}), false);
+assert.equal(shouldReuseSession({expiresAt: Date.now() + 60_000}), true);
 ```
 
 - [ ] **Step 2: 运行测试并确认模块不存在**
@@ -495,7 +504,7 @@ Expected: FAIL with module not found。
 
 - [ ] **Step 3: 实现路由、请求层和建档页面**
 
-将设计稿 CSS 数值转换为 rpx 时保持 375px 设计宽度；`app.wxss` 只放全局 reset 和 token。图片、图标和头像必须下载为本地许可资产并记录在 `miniprogram/assets/SOURCES.md`，不得运行时依赖 Unsplash、Iconify 或 DiceBear。
+启动时调用 `wx.login()`，把 code 发送给后端换取 JWT 和内部 `userId`；所有领域 API 只发送 JWT，由后端从 token 解析 `user_id`，前端不得通过请求参数切换其他用户。用户点击“使用微信头像昵称”后再读取公开资料并调用 profile 同步接口。将设计稿 CSS 数值转换为 rpx 时保持 375px 设计宽度；`app.wxss` 只放全局 reset 和 token。图片、图标和头像必须下载为本地许可资产并记录在 `miniprogram/assets/SOURCES.md`，不得运行时依赖 Unsplash、Iconify 或 DiceBear。
 
 - [ ] **Step 4: 构建 npm 并运行静态检查**
 
