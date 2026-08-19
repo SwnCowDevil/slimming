@@ -12,3 +12,7 @@ from app.foods import models as food_models  # noqa: E402,F401
 from app.meals import models as meal_models  # noqa: E402,F401
 from app.weights import models as weight_models  # noqa: E402,F401
 from app.habits import models as habit_models  # noqa: E402,F401
+from app.recipes import models as recipe_models  # noqa: E402,F401
+from app.ai_coach import models as ai_models  # noqa: E402,F401
+from app.dietitians import models as dietitian_models  # noqa: E402,F401
+from app.media import models as media_models  # noqa: E402,F401
