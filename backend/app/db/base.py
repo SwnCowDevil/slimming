@@ -1,0 +1,10 @@
+from sqlalchemy.orm import DeclarativeBase
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+# Import ORM models so metadata is complete for Alembic and tests.
+from app.auth import models as auth_models  # noqa: E402,F401
+
