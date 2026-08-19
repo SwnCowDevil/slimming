@@ -41,6 +41,12 @@ def wechat_gateway() -> FakeWechatGateway:
 
 
 @pytest.fixture
+def auth_headers(client: TestClient) -> dict[str, str]:
+    payload = client.post("/api/v1/auth/wechat", json={"code": "valid-code"}).json()
+    return {"Authorization": f"Bearer {payload['access_token']}"}
+
+
+@pytest.fixture
 def client(settings: Settings, wechat_gateway: FakeWechatGateway) -> Iterator[TestClient]:
     engine = create_engine(
         settings.database_url,

@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from app.auth.router import router as auth_router
 from app.auth.service import HttpWechatGateway, WechatGateway
 from app.core.config import Settings, get_settings
+from app.profiles.router import router as profiles_router
 
 
 def create_app(
@@ -16,6 +17,7 @@ def create_app(
         resolved_settings.wechat_app_secret,
     )
     app.include_router(auth_router)
+    app.include_router(profiles_router)
 
     @app.get("/health")
     def health() -> dict[str, str]:
@@ -25,4 +27,3 @@ def create_app(
 
 
 app = create_app()
-
