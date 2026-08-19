@@ -1,0 +1,4 @@
+.summary { padding:36rpx; }
+.summary view { font-size:32rpx; font-weight:500; }
+.summary text { display:block; margin-top:12rpx; color:var(--color-muted); font-size:25rpx; line-height:1.7; }
+.button-primary { margin-top:28rpx; width:100%; }

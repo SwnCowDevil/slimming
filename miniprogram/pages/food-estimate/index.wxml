@@ -1,0 +1,1 @@
+<view class="page stack"><view class="title">不用秤，也能先估个大概</view><view class="subtitle">这些是常见熟食的粗略范围，正式记录前仍可调整克数。</view><view wx:for="{{items}}" wx:key="name" class="card estimate"><view>{{item.name}}</view><text>{{item.reference}}</text><strong>{{item.grams}}</strong></view></view>

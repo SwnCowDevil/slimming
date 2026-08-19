@@ -36,17 +36,25 @@ def record_recipe(
     if recipe is None:
         raise HTTPException(status_code=404, detail="recipe not found")
     entries = []
-    for index, item in enumerate(recipe.items):
-        entry = create_meal_entry(
-            session,
-            current_user.id,
-            MealEntryCreate(
-                meal_date=body.meal_date,
-                meal_type=body.meal_type,
-                source_food_id=item.source_food_id,
-                grams=item.grams,
-            ),
-            f"{idempotency_key}:{index}",
-        )
-        entries.append(entry.id)
-    return RecipeRecordResponse(recipe_id=recipe.id, meal_entry_ids=entries)
+    try:
+        for index, item in enumerate(recipe.items):
+            entry = create_meal_entry(
+                session,
+                current_user.id,
+                MealEntryCreate(
+                    meal_date=body.meal_date,
+                    meal_type=body.meal_type,
+                    source_food_id=item.source_food_id,
+                    grams=item.grams,
+                ),
+                f"{idempotency_key}:{index}",
+                commit=False,
+            )
+            entries.append(entry)
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    for entry in entries:
+        session.refresh(entry)
+    return RecipeRecordResponse(recipe_id=recipe.id, meal_entry_ids=[entry.id for entry in entries])

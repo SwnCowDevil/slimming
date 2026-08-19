@@ -33,6 +33,7 @@ def settings() -> Settings:
         wechat_app_id="test-app",
         wechat_app_secret="test-secret",
         enable_dev_auth=False,
+        admin_import_key="test-admin-import-key",
         tka_import_root=Path(__file__).parent / "foods" / "fixtures",
     )
 
@@ -57,7 +58,10 @@ def db_session(settings: Settings) -> Iterator[Session]:
 @pytest.fixture
 def auth_headers(client: TestClient) -> dict[str, str]:
     payload = client.post("/api/v1/auth/wechat", json={"code": "valid-code"}).json()
-    return {"Authorization": f"Bearer {payload['access_token']}"}
+    return {
+        "Authorization": f"Bearer {payload['access_token']}",
+        "X-Admin-Import-Key": "test-admin-import-key",
+    }
 
 
 @pytest.fixture

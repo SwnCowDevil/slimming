@@ -1,0 +1,1 @@
+.calendar-shell { overflow:hidden; background:#fff; border:1rpx solid #E3EBE5; border-radius:32rpx; padding:0 0 4rpx; }

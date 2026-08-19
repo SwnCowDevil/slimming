@@ -1,0 +1,1 @@
+.menu{overflow:hidden}.menu view,.menu navigator{display:flex;flex-direction:column;padding:30rpx;border-bottom:1rpx solid var(--color-border)}.menu text:last-child{margin-top:8rpx;color:var(--color-caption);font-size:22rpx}

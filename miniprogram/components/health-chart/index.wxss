@@ -1,0 +1,1 @@
+.chart-shell{box-sizing:border-box;background:#fff;border:1rpx solid #E3EBE5;border-radius:36rpx;padding:28rpx 24rpx}.chart-title{font-size:29rpx;font-weight:500;color:#47515A;margin:0 0 18rpx 10rpx}.canvas{display:block}.empty{height:300rpx;display:flex;align-items:center;justify-content:center;color:#8B9A90;font-size:23rpx}

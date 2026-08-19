@@ -1,0 +1,1 @@
+Page({data:{items:[{name:"一拳主食",reference:"熟米饭、面条",grams:"约 100–150 克"},{name:"一掌蛋白质",reference:"熟鸡胸、鱼肉",grams:"约 80–120 克"},{name:"双手一捧蔬菜",reference:"叶菜、瓜茄",grams:"约 150–250 克"},{name:"一拇指油脂",reference:"坚果、花生酱",grams:"约 10–15 克"}]}});

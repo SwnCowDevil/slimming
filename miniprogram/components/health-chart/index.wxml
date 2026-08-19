@@ -1,0 +1,5 @@
+<view class="chart-shell">
+  <view wx:if="{{title}}" class="chart-title">{{title}}</view>
+  <view wx:if="{{empty}}" class="empty">记录几天后，这里会出现趋势。</view>
+  <canvas wx:else canvas-id="{{canvasId}}" id="{{canvasId}}" class="canvas" style="width:{{width}}px;height:{{height}}px" bindtouchend="touchEnd"></canvas>
+</view>

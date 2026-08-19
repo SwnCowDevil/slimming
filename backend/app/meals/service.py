@@ -14,6 +14,7 @@ def create_meal_entry(
     user_id: str,
     command: MealEntryCreate,
     idempotency_key: str,
+    commit: bool = True,
 ) -> MealEntry:
     existing = session.scalar(
         select(MealEntry).where(MealEntry.user_id == user_id, MealEntry.idempotency_key == idempotency_key)
@@ -42,7 +43,9 @@ def create_meal_entry(
         idempotency_key=idempotency_key,
     )
     session.add(entry)
-    session.commit()
-    session.refresh(entry)
+    if commit:
+        session.commit()
+        session.refresh(entry)
+    else:
+        session.flush()
     return entry
-

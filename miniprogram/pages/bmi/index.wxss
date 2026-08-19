@@ -1,0 +1,1 @@
+.button-primary{width:100%}.result{padding:44rpx;text-align:center}.result text{font-family:"DIN Alternate";font-size:72rpx}.result view{margin-top:10rpx;color:var(--color-muted)}

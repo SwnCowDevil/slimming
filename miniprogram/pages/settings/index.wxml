@@ -1,0 +1,1 @@
+<view class="page stack"><view class="card menu"><view><text>数据同步</text><text>仅在登录后按内部用户 ID 同步</text></view><view><text>AI 记录</text><text>草稿必须手动确认</text></view><navigator url="/pages/privacy/index"><text>隐私说明</text><text>查看数据使用边界</text></navigator></view></view>

@@ -1,0 +1,9 @@
+<view class="budget-card">
+  <view class="inner">
+    <view class="head"><text>今日热量预算</text><text class="status">{{statusText}}</text></view>
+    <view class="remaining"><text class="caption">剩余可摄入</text><view><text class="number">{{remaining}}</text><text class="unit"> kcal</text></view></view>
+    <view class="meta"><view><text>总预算</text><strong>{{budget}}</strong></view><view class="right"><text>已摄入</text><strong>{{consumed}}</strong></view></view>
+    <view class="track"><view class="fill" style="width:{{percent}}%"></view></view>
+  </view>
+  <nutrient-bars items="{{nutrients}}" />
+</view>

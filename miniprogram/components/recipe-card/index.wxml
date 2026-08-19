@@ -1,0 +1,1 @@
+<view class="recipe" bindtap="open"><image class="photo" mode="aspectFill" src="{{recipe.image}}" /><view class="content"><view class="row"><text class="name">{{recipe.title}}</text><text class="kcal">{{recipe.kcalLabel}}</text></view><view class="meta">{{recipe.minutes}} 分钟 · {{recipe.subtitle}}</view></view></view>

@@ -1,6 +1,7 @@
 from pathlib import Path
+from secrets import compare_digest
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.auth.models import User
@@ -39,10 +40,13 @@ def get_food(
 @router.post("/admin/foods/import", response_model=ImportReport)
 def import_foods(
     body: ImportRequest,
+    admin_import_key: str = Header(default="", alias="X-Admin-Import-Key"),
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
     settings: Settings = Depends(get_settings),
 ) -> ImportReport:
+    if not settings.admin_import_key or not compare_digest(admin_import_key, settings.admin_import_key):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="无食品库管理权限")
     root = settings.tka_import_root.resolve()
     path = Path(body.path).resolve()
     if path != root and root not in path.parents:
@@ -50,4 +54,3 @@ def import_foods(
     if not path.is_file():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="导入文件不存在")
     return TkaProvider(session).import_dataset(path, body.version, dry_run=body.dry_run)
-

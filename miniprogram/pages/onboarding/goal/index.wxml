@@ -1,0 +1,11 @@
+<view class="page stack">
+  <view class="eyebrow">1 / 4</view>
+  <view class="title">你最想先改善什么？</view>
+  <view class="subtitle">目标用于计算建议区间，之后可以随时调整。</view>
+  <view class="options stack">
+    <view wx:for="{{options}}" wx:key="value" data-value="{{item.value}}" bindtap="select" class="option card {{goal === item.value ? 'selected' : ''}}">
+      <view class="option-title">{{item.label}}</view><view class="option-desc">{{item.desc}}</view>
+    </view>
+  </view>
+  <button class="button-primary" disabled="{{!goal}}" bindtap="next">下一步</button>
+</view>

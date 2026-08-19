@@ -1,0 +1,6 @@
+.segmented { display:grid; grid-template-columns:1fr 1fr; padding:8rpx; background:#EEF2EE; border-radius:28rpx; text-align:center; }
+.segmented view { padding:20rpx; border-radius:22rpx; }
+.segmented .active { background:#fff; color:var(--color-primary); }
+.field-row { display:grid; grid-template-columns:150rpx 1fr 70rpx; align-items:center; gap:16rpx; }
+.field-row .field { width:100%; text-align:right; }
+.button-primary { margin-top:28rpx; width:100%; }

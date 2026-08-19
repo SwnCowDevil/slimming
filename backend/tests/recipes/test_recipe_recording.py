@@ -35,3 +35,31 @@ def test_recipe_one_click_recording_is_idempotent(client, auth_headers):
     assert second.status_code == 200
     assert first.json()["meal_entry_ids"] == second.json()["meal_entry_ids"]
     assert len(client.get("/api/v1/meals?date=2026-08-19", headers=auth_headers).json()["items"]) == 1
+
+
+def test_recipe_recording_rolls_back_all_items_when_one_food_is_missing(client, auth_headers):
+    fixture = Path(__file__).parents[1] / "foods" / "fixtures" / "tka_sample.json"
+    client.post(
+        "/api/v1/admin/foods/import",
+        headers=auth_headers,
+        json={"path": str(fixture), "version": "fixture-2026-08", "dry_run": False},
+    )
+    recipe = Recipe(id="recipe-atomic", title="Atomic bowl", minutes=12, tags=[])
+    recipe.items.extend([
+        RecipeItem(source_food_id="8535", grams=100),
+        RecipeItem(source_food_id="missing-food", grams=100),
+    ])
+    session_iterator = client.app.dependency_overrides[get_session]()
+    session = next(session_iterator)
+    session.add(recipe)
+    session.commit()
+    session.close()
+
+    response = client.post(
+        "/api/v1/recipes/recipe-atomic/record",
+        headers={**auth_headers, "Idempotency-Key": "atomic-record"},
+        json={"meal_date": "2026-08-19", "meal_type": "lunch"},
+    )
+
+    assert response.status_code == 404
+    assert client.get("/api/v1/meals?date=2026-08-19", headers=auth_headers).json()["items"] == []

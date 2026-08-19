@@ -1,0 +1,8 @@
+<view class="page today">
+  <view class="header"><view><view class="eyebrow">{{dateLabel}}</view><view class="title greeting">早安，{{nickname}}</view></view><button class="ai-button" bindtap="openAi">AI</button></view>
+  <calorie-card budget="{{budget}}" consumed="{{consumed}}" nutrients="{{nutrients}}" />
+  <view class="actions"><button class="button-primary" bindtap="recordMeal">记录一餐</button><view class="secondary"><button class="button-light" bindtap="scanFood">拍照识别</button><button class="button-light" bindtap="recordWeight">记录体重</button></view></view>
+  <view class="section-head"><text>今日饮食</text><text>{{mealCount}} 餐</text></view>
+  <view class="meal-list stack"><meal-card wx:for="{{mealGroups}}" wx:key="type" title="{{item.title}}" time="{{item.time}}" kcal="{{item.kcal}}" items="{{item.items}}" bind:add="recordMeal" /></view>
+  <ai-tip text="{{aiTip}}" />
+</view>

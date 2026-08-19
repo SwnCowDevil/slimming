@@ -1,0 +1,1 @@
+<view class="bars"><view class="row" wx:for="{{items}}" wx:key="label"><text class="label">{{item.label}}</text><view class="track"><view class="fill" style="width:{{item.percent}}%"></view></view><text class="value">{{item.value}}/{{item.goal}}g</text></view></view>

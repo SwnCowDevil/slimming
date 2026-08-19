@@ -1,0 +1,1 @@
+.seg{display:grid;grid-template-columns:1fr 1fr;background:#EDF2EE;padding:8rpx;border-radius:28rpx;text-align:center}.seg view{padding:20rpx;border-radius:22rpx}.seg .on{background:#fff;color:#6B9B84}.button-primary{width:100%}.result{padding:40rpx;font-size:34rpx}.result text{display:block;margin-top:14rpx;color:var(--color-muted);font-size:23rpx}

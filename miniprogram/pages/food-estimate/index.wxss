@@ -1,0 +1,1 @@
+.estimate{padding:30rpx}.estimate view{font-size:30rpx;font-weight:500}.estimate text{display:block;color:var(--color-caption);font-size:23rpx;margin:8rpx 0}.estimate strong{font-weight:500;color:#C77B2F}

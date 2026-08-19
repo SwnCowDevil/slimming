@@ -1,0 +1,1 @@
+{ "navigationBarTitleText": "今日", "usingComponents": { "calorie-card": "/components/calorie-card/index", "nutrient-bars": "/components/nutrient-bars/index", "meal-card": "/components/meal-card/index", "ai-tip": "/components/ai-tip/index" } }

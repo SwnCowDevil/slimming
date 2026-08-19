@@ -1,0 +1,15 @@
+<view class="welcome page">
+  <view class="brand">轻减</view>
+  <view class="hero-card card">
+    <view class="eyebrow">健康饮食与体重管理</view>
+    <view class="title">从今天吃什么开始，轻一点，也稳一点</view>
+    <view class="subtitle">记录饮食和体重，查看营养趋势。食物数据来自可追溯的 TKA 数据集。</view>
+  </view>
+  <view class="promise stack">
+    <view>每条营养记录保留来源与版本</view>
+    <view>AI 只生成草稿，由你确认后再记录</view>
+    <view>需要时可申请专业营养师支持</view>
+  </view>
+  <button class="button-primary" loading="{{checking}}" disabled="{{checking}}" bindtap="start">{{checking?'正在读取资料':'开始建档'}}</button>
+  <view class="privacy">继续即表示你已阅读隐私说明；微信公开资料仅在你主动授权后保存。</view>
+</view>
