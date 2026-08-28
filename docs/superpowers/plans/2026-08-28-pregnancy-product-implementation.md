@@ -630,7 +630,7 @@ Expected: all backend tests pass with zero failures.
 
 Create a temporary SQLite database, run `alembic upgrade head`, inspect current revision, run `alembic downgrade 0005_guidance`, then `alembic upgrade head` again.
 
-Expected: each command exits 0 and the final revision is `0010_pregnancy_guidance`.
+Expected: each command exits 0 and the final revision is `0011_ai_policy`.
 
 - [ ] **Step 5: Run complete mini-program tests**
 

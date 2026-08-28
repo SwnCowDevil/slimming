@@ -47,4 +47,8 @@ function syncWechatProfile({ nickName, avatarUrl }) {
   });
 }
 
-module.exports = { buildLoginRequest, loginWithWechat, syncWechatProfile };
+function deleteAccount() {
+  return request({ url: "/api/v1/auth/me", method: "DELETE" });
+}
+
+module.exports = { buildLoginRequest, deleteAccount, loginWithWechat, syncWechatProfile };

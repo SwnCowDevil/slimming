@@ -4,7 +4,9 @@ SCRIPT_DIR=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
 . "$SCRIPT_DIR/test-lib.sh"
 PROJECT_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)
 
-assert_contains "$("$PROJECT_ROOT/scripts/deploy-backend.sh" --dry-run)" "DRY RUN"
+deploy_plan=$("$PROJECT_ROOT/scripts/deploy-backend.sh" --dry-run)
+assert_contains "$deploy_plan" "DRY RUN"
+assert_contains "$deploy_plan" "迁移成功后再启动"
 assert_contains "$("$PROJECT_ROOT/scripts/upload-miniprogram.sh" --help)" "WECHAT_DEVTOOLS_CLI_TOKEN"
 assert_fails "$PROJECT_ROOT/scripts/upload-miniprogram.sh" --version 0.1.0 --description test
 assert_fails "$PROJECT_ROOT/scripts/deploy-backend.sh" --execute

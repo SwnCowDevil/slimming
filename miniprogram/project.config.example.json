@@ -1,5 +1,5 @@
 {
-  "description": "轻减原生微信小程序",
+  "description": "孕食记原生微信小程序",
   "miniprogramRoot": "./",
   "compileType": "miniprogram",
   "appid": "touristappid",
@@ -10,4 +10,3 @@
     "packNpmManually": false
   }
 }
-

@@ -1,1 +1,35 @@
-<view class="page profile"><view class="user card"><view><view class="name">{{nickname}}</view><view class="id">内部账户 {{userIdShort}}</view></view><button class="wechat" bindtap="useWechatProfile">使用微信资料</button></view><view class="metrics card"><view><text>{{profile.current_weight_kg||'—'}}</text><small>当前 kg</small></view><view><text>{{profile.target_weight_kg||'—'}}</text><small>目标 kg</small></view><view><text>{{profile.bmi||'—'}}</text><small>BMI</small></view></view><view class="section">常用工具</view><view class="tools"><navigator url="/pages/bmi/index">BMI 计算</navigator><navigator url="/pages/bmr/index">基础代谢</navigator><navigator url="/pages/food-estimate/index">食物估重</navigator></view><view class="menu card"><navigator url="/pages/dietitians/index">营养师支持</navigator><navigator url="/pages/data-sources/index">数据来源</navigator><navigator url="/pages/privacy/index">隐私与用户数据</navigator><navigator url="/pages/settings/index">设置</navigator></view><view class="weight card"><view class="section">记录体重</view><view class="weight-row"><input type="digit" value="{{weight}}" bindinput="weightInput" placeholder="例如 68.5"/><button bindtap="saveWeight">保存</button></view></view></view>
+<view class="page profile">
+  <view class="user card">
+    <view>
+      <view class="name">{{nickname}}</view>
+      <view class="id">内部账户 {{userIdShort}}</view>
+    </view>
+    <button class="wechat" bindtap="useWechatProfile">使用微信资料</button>
+  </view>
+
+  <view class="metrics card">
+    <view><text>{{currentWeight||'—'}}</text><small>当前 kg</small></view>
+    <view><text>{{pregnancy.gestation.week||'—'}}</text><small>当前孕周</small></view>
+    <view><text class="date-value">{{pregnancy.due_date||'—'}}</text><small>预产期</small></view>
+  </view>
+
+  <view class="section">常用工具</view>
+  <view class="tools">
+    <navigator url="/pages/food-estimate/index">食物估重</navigator>
+    <navigator url="/pages/data-sources/index">数据来源</navigator>
+    <navigator url="/pages/privacy/index">隐私说明</navigator>
+  </view>
+
+  <view class="menu card">
+    <navigator url="/pages/dietitians/index">营养师支持</navigator>
+    <navigator url="/pages/settings/index">设置</navigator>
+  </view>
+
+  <view class="weight card">
+    <view class="section">记录体重</view>
+    <view class="weight-row">
+      <input type="digit" value="{{weight}}" bindinput="weightInput" placeholder="例如 68.5"/>
+      <button bindtap="saveWeight">保存</button>
+    </view>
+  </view>
+</view>

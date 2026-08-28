@@ -1,1 +1,18 @@
-<view class="page stack"><view class="title">食品营养数据来源</view><view class="card source"><view>Estonian TKA / NutriData</view><text>食品成分数据通过受控导入进入本地目录，每条食品保存来源 URL、数据集版本、FoodEx2 编码、方法与来源 ID、内容哈希。</text><text>正式饮食记录会快照当时的营养值和版本，后续目录更新不会改写历史。</text></view><view class="card source"><view>计算说明</view><text>BMI、BMR 和营养目标是健康管理参考，不提供诊断或治疗意见。</text></view></view>
+<view class="page source-page">
+  <view class="eyebrow">可追溯数据</view>
+  <view class="title">食品营养数据来源</view>
+  <view class="source source-mint">
+    <view>TKA 食品成分数据库</view>
+    <text>食品成分通过获得使用许可的官方导出文件受控导入本地目录。每条食品保留来源地址、数据集版本、FoodEx2 编码、来源 ID 和内容哈希。</text>
+    <text>正式饮食记录会保存当时的营养值与版本，目录后续更新不会改写历史记录。</text>
+  </view>
+  <view class="source source-blue">
+    <view>TAP 膳食分析工具</view>
+    <text>TAP 仅作为膳食分析流程和交互参考，不是线上接口，也不直接生成孕期建议。</text>
+  </view>
+  <view class="source source-yellow">
+    <view>运行边界</view>
+    <text>小程序不会实时抓取 TKA 或 TAP 网页。孕期阶段信息、食谱筛选与安全标签由独立、可版本化且经过审核的规则提供。</text>
+  </view>
+  <view class="source-note">页面结果用于日常记录参考，不能替代医生或具备相应资质的专业人员意见。</view>
+</view>

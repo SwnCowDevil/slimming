@@ -2,6 +2,7 @@ from datetime import date
 from decimal import Decimal
 from pathlib import Path
 
+from app.auth.models import User
 from app.foods.tka_provider import TkaProvider
 from app.meals.schemas import MealEntryCreate
 from app.meals.service import create_meal_entry
@@ -11,6 +12,8 @@ FIXTURE = Path(__file__).parents[1] / "foods" / "fixtures" / "tka_sample.json"
 
 
 def test_meal_snapshot_does_not_change_after_catalog_update(db_session):
+    db_session.add(User(id="user-a"))
+    db_session.commit()
     provider = TkaProvider(db_session)
     provider.import_dataset(FIXTURE, "fixture-2026-08")
     entry = create_meal_entry(

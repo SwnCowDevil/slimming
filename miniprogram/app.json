@@ -23,13 +23,13 @@
   "window": {
     "navigationBarBackgroundColor": "#F9FAF7",
     "navigationBarTextStyle": "black",
-    "navigationBarTitleText": "轻减",
+    "navigationBarTitleText": "孕食记",
     "backgroundColor": "#F6F8F5",
     "backgroundTextStyle": "light"
   },
   "tabBar": {
     "color": "#8B9A90",
-    "selectedColor": "#78A992",
+    "selectedColor": "#86B6DC",
     "backgroundColor": "#FFFFFF",
     "borderStyle": "white",
     "list": [

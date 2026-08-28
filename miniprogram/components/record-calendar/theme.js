@@ -1,14 +1,14 @@
 const calendarTheme = {
-  "--wc-primary": "#78A992",
-  "--wc-primary-2": "#EAF4ED",
+  "--wc-primary": "#9BCDB2",
+  "--wc-primary-2": "#EAF6EF",
   "--wc-bg-light": "#FFFFFF",
-  "--wc-title-color-light": "#47515A",
-  "--wc-title-sub-color-light": "#8B9A90",
-  "--wc-week-color-light": "#8B9A90",
-  "--wc-date-color-light": "#47515A",
-  "--wc-checked-color-light": "#47515A",
-  "--wc-checked-bg-light": "#DDEFE7",
-  "--wc-checked-today-color-light": "#47515A",
+  "--wc-title-color-light": "#59645E",
+  "--wc-title-sub-color-light": "#98A39D",
+  "--wc-week-color-light": "#98A39D",
+  "--wc-date-color-light": "#59645E",
+  "--wc-checked-color-light": "#59645E",
+  "--wc-checked-bg-light": "#EAF6EF",
+  "--wc-checked-today-color-light": "#59645E",
   "--wc-checked-today-bg-light": "#FDE8C9",
   "--wc-today-color-light": "#E8862D",
   "--wc-title-size": "30rpx",
@@ -22,9 +22,9 @@ const calendarTheme = {
 const calendarStyle = Object.entries(calendarTheme).map(([key, value]) => `${key}:${value}`).join(";");
 const calendarConfig = { view: "week", weekstart: 1, sameChecked: true, darkmode: false };
 const markStyles = {
-  full: { color: "#78A992", text: "●" },
+  full: { color: "#9BCDB2", text: "●" },
   partial: { color: "#F2B66D", text: "●" },
-  "over-budget": { color: "#F3A58E", text: "!" },
+  attention: { color: "#F3A58E", text: "!" },
 };
 function markForDay(status) { return markStyles[status] || markStyles.partial; }
 

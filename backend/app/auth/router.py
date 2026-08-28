@@ -1,5 +1,6 @@
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.auth.models import User
@@ -19,6 +20,7 @@ from app.auth.service import (
 )
 from app.core.config import Settings, get_settings
 from app.db.session import get_session
+from app.media.models import MediaUpload
 
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
@@ -67,3 +69,23 @@ def update_wechat_profile(
     session.commit()
     session.refresh(current_user)
     return current_user
+
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+def delete_account(
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> Response:
+    storage_keys = session.scalars(
+        select(MediaUpload.storage_key).where(MediaUpload.user_id == current_user.id)
+    ).all()
+    media_root = settings.media_root.resolve()
+    for storage_key in storage_keys:
+        destination = (media_root / storage_key).resolve()
+        if media_root in destination.parents:
+            destination.unlink(missing_ok=True)
+
+    session.delete(current_user)
+    session.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

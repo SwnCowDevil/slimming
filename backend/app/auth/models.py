@@ -21,7 +21,9 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
-    identities: Mapped[list["WechatIdentity"]] = relationship(back_populates="user")
+    identities: Mapped[list["WechatIdentity"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan", passive_deletes=True
+    )
 
 
 class WechatIdentity(Base):
