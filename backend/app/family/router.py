@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, status
+from datetime import date
+
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.auth.models import User
@@ -7,15 +9,22 @@ from app.db.session import get_session
 from app.family.schemas import (
     InvitationAccept,
     InvitationRead,
+    FamilyTaskCreate,
+    FamilyTaskList,
+    FamilyTaskRead,
+    FamilyTaskUpdate,
     MembershipList,
     MembershipRead,
     PermissionUpdate,
 )
 from app.family.service import (
     accept_invitation,
+    create_family_task,
     create_invitation,
+    list_family_tasks,
     list_memberships,
     revoke_membership,
+    update_family_task,
     update_permissions,
 )
 
@@ -68,3 +77,36 @@ def revoke_family_member(
     session: Session = Depends(get_session),
 ):
     return revoke_membership(session, current_user.id, membership_id)
+
+
+@router.get("/tasks", response_model=FamilyTaskList)
+def get_family_tasks(
+    task_date: date = Query(alias="date"),
+    subject_user_id: str | None = Query(default=None),
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+) -> FamilyTaskList:
+    return FamilyTaskList(
+        items=list_family_tasks(
+            session, current_user.id, task_date, subject_user_id
+        )
+    )
+
+
+@router.post("/tasks", response_model=FamilyTaskRead, status_code=status.HTTP_201_CREATED)
+def add_family_task(
+    body: FamilyTaskCreate,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    return create_family_task(session, current_user.id, body)
+
+
+@router.patch("/tasks/{task_id}", response_model=FamilyTaskRead)
+def patch_family_task(
+    task_id: str,
+    body: FamilyTaskUpdate,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    return update_family_task(session, current_user.id, task_id, body)

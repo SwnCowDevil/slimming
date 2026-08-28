@@ -1,4 +1,5 @@
-from datetime import datetime
+from datetime import date, datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -42,3 +43,41 @@ class MembershipRead(BaseModel):
 
 class MembershipList(BaseModel):
     items: list[MembershipRead]
+
+
+class FamilyTaskCreate(BaseModel):
+    task_date: date
+    task_type: Literal["shopping", "cooking", "other"]
+    title: str = Field(min_length=1, max_length=160)
+    content: dict = Field(default_factory=dict)
+    assignee_user_id: str | None = None
+    subject_user_id: str | None = None
+
+
+class FamilyTaskUpdate(BaseModel):
+    status: Literal["pending", "in_progress", "completed", "cancelled"] | None = None
+    assignee_user_id: str | None = None
+    title: str | None = Field(default=None, min_length=1, max_length=160)
+
+
+class FamilyTaskRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    pregnancy_episode_id: str
+    subject_user_id: str
+    task_date: date
+    task_type: str
+    title: str
+    content: dict
+    assignee_user_id: str | None
+    status: str
+    created_by_user_id: str
+    completed_by_user_id: str | None
+    completed_at: datetime | None
+    created_at: datetime
+    updated_at: datetime
+
+
+class FamilyTaskList(BaseModel):
+    items: list[FamilyTaskRead]

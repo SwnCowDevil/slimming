@@ -6,7 +6,8 @@ from fastapi import HTTPException, status
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
-from app.family.models import ConsentEvent, FamilyInvitation, FamilyMembership
+from app.family.models import ConsentEvent, FamilyInvitation, FamilyMembership, FamilyTask
+from app.family.schemas import FamilyTaskCreate, FamilyTaskUpdate
 from app.family.schemas import ALLOWED_PERMISSION_SCOPES
 from app.pregnancies.models import PregnancyEpisode
 from app.pregnancies.service import get_active_episode, require_active_episode
@@ -213,3 +214,91 @@ def authorize_subject(
     if membership is None or scope not in membership.permission_scopes:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="未获得所需的家庭权限")
     return episode
+
+
+def create_family_task(
+    session: Session, actor_user_id: str, body: FamilyTaskCreate
+) -> FamilyTask:
+    subject_user_id = body.subject_user_id or actor_user_id
+    if subject_user_id == actor_user_id:
+        episode = require_active_episode(session, subject_user_id)
+    else:
+        episode = authorize_subject(
+            session,
+            actor_user_id=actor_user_id,
+            subject_user_id=subject_user_id,
+            scope="family_task:write",
+        )
+    task = FamilyTask(
+        pregnancy_episode_id=episode.id,
+        subject_user_id=subject_user_id,
+        task_date=body.task_date,
+        task_type=body.task_type,
+        title=body.title,
+        content=body.content,
+        assignee_user_id=body.assignee_user_id,
+        created_by_user_id=actor_user_id,
+    )
+    session.add(task)
+    session.commit()
+    session.refresh(task)
+    return task
+
+
+def list_family_tasks(
+    session: Session,
+    actor_user_id: str,
+    task_date,
+    subject_user_id: str | None = None,
+) -> list[FamilyTask]:
+    subject_id = subject_user_id or actor_user_id
+    if subject_id == actor_user_id:
+        episode = require_active_episode(session, subject_id)
+    else:
+        episode = authorize_subject(
+            session,
+            actor_user_id=actor_user_id,
+            subject_user_id=subject_id,
+            scope="pregnancy:read",
+        )
+    return list(
+        session.scalars(
+            select(FamilyTask)
+            .where(
+                FamilyTask.pregnancy_episode_id == episode.id,
+                FamilyTask.task_date == task_date,
+            )
+            .order_by(FamilyTask.created_at)
+        ).all()
+    )
+
+
+def update_family_task(
+    session: Session,
+    actor_user_id: str,
+    task_id: str,
+    body: FamilyTaskUpdate,
+) -> FamilyTask:
+    task = session.get(FamilyTask, task_id)
+    if task is None:
+        raise HTTPException(status_code=404, detail="家庭任务不存在")
+    if actor_user_id != task.subject_user_id:
+        authorize_subject(
+            session,
+            actor_user_id=actor_user_id,
+            subject_user_id=task.subject_user_id,
+            scope="family_task:write",
+        )
+    payload = body.model_dump(exclude_unset=True)
+    for name, value in payload.items():
+        setattr(task, name, value)
+    if task.status == "completed":
+        task.completed_by_user_id = actor_user_id
+        task.completed_at = now_utc()
+    elif "status" in payload:
+        task.completed_by_user_id = None
+        task.completed_at = None
+    session.add(task)
+    session.commit()
+    session.refresh(task)
+    return task
