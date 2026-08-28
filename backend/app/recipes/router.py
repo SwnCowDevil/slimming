@@ -7,7 +7,8 @@ from app.auth.models import User
 from app.auth.service import get_current_user
 from app.db.session import get_session
 from app.meals.schemas import MealEntryCreate
-from app.meals.service import create_meal_entry
+from app.meals.service import create_estimated_meal_entry, create_meal_entry
+from app.foods.tka_provider import TkaProvider
 from app.recipes.models import Recipe
 from app.recipes.schemas import RecipeRead, RecipeRecordRequest, RecipeRecordResponse
 from app.recipes.service import (
@@ -92,21 +93,62 @@ def record_recipe(
     recipe = get_visible_recipe(session, current_user.id, recipe_id)
     if recipe is None:
         raise HTTPException(status_code=404, detail="recipe not found")
+    needs_confirmation = recipe.nutrition_source in {"mixed", "ai_estimated"}
+    if needs_confirmation and not body.confirmed_items:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "action": "confirm_ingredients",
+                "message": "请确认食材名称和重量后再记录",
+            },
+        )
+    confirmed = {item.item_id: item for item in (body.confirmed_items or [])}
+    if body.confirmed_items and (
+        len(confirmed) != len(body.confirmed_items)
+        or set(confirmed) != {item.id for item in recipe.items}
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"action": "confirm_ingredients", "message": "确认的食材与食谱不一致"},
+        )
     entries = []
+    tka = TkaProvider(session)
     try:
         for index, item in enumerate(recipe.items):
-            entry = create_meal_entry(
-                session,
-                current_user.id,
-                MealEntryCreate(
-                    meal_date=body.meal_date,
-                    meal_type=body.meal_type,
-                    source_food_id=item.source_food_id,
-                    grams=item.grams,
-                ),
-                f"{idempotency_key}:{index}",
-                commit=False,
+            confirmation = confirmed.get(item.id)
+            grams = confirmation.grams if confirmation is not None else item.grams
+            ingredient_name = (
+                confirmation.ingredient_name_zh if confirmation is not None else item.ingredient_name_zh
             )
+            matched_food = tka.match_exact(ingredient_name) if confirmation is not None else None
+            source_food_id = matched_food.source_food_id if matched_food is not None else item.source_food_id
+            if source_food_id is not None:
+                entry = create_meal_entry(
+                    session,
+                    current_user.id,
+                    MealEntryCreate(
+                        meal_date=body.meal_date,
+                        meal_type=body.meal_type,
+                        source_food_id=source_food_id,
+                        grams=grams,
+                    ),
+                    f"{idempotency_key}:{index}",
+                    commit=False,
+                )
+                entry.source_recipe_id = recipe.id
+            else:
+                entry = create_estimated_meal_entry(
+                    session,
+                    current_user.id,
+                    recipe,
+                    item,
+                    grams,
+                    body.meal_date,
+                    body.meal_type,
+                    f"{idempotency_key}:{index}",
+                    ingredient_name_zh=ingredient_name,
+                    commit=False,
+                )
             entries.append(entry)
         session.commit()
     except Exception:

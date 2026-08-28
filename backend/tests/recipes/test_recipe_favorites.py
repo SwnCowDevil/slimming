@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from sqlalchemy import select
 
@@ -167,3 +167,94 @@ def test_other_users_private_recipe_is_not_addressable(client, auth_headers):
         headers={**auth_headers, "Idempotency-Key": "forbidden-private"},
         json={"meal_date": "2026-08-28", "meal_type": "dinner"},
     ).status_code == 404
+
+
+def _candidate_payload(candidate_id: str = "candidate-save-1") -> dict:
+    return {
+        "candidate_id": candidate_id,
+        "title": "番茄鸡丁",
+        "summary": "清淡家常的一餐",
+        "meal_type": "dinner",
+        "tags": ["home-style"],
+        "servings": 1,
+        "minutes": 25,
+        "ingredients": [{
+            "name_zh": "鸡胸肉",
+            "quantity": 120,
+            "unit": "克",
+            "grams": 120,
+            "energy_kcal_per_100g": 133,
+            "protein_g_per_100g": 24,
+            "fat_g_per_100g": 3,
+            "carbohydrate_g_per_100g": 0,
+            "fiber_g_per_100g": 0,
+            "source_food_id": None,
+            "nutrition_source": "ai_estimated",
+        }],
+        "steps": ["鸡肉彻底加热至中心完全熟透。"],
+        "allergens": [],
+        "nutrition_per_serving": {
+            "energy_kcal": 159.6,
+            "protein_g": 28.8,
+            "fat_g": 3.6,
+            "carbohydrate_g": 0,
+            "fiber_g": 0,
+        },
+        "recommendation_reason": "适合晚餐",
+        "cooking_requirements": ["禽肉必须全熟"],
+        "nutrition_source": "ai_estimated",
+        "nutrition_confidence": "low",
+        "content_fingerprint": "fp-candidate-save-1",
+    }
+
+
+def _seed_candidate(client, auth_headers, *, expired: bool = False) -> str:
+    client.post(
+        "/api/v1/pregnancies",
+        headers=auth_headers,
+        json={
+            "due_date": (date.today() + timedelta(days=120)).isoformat(),
+            "height_cm": 165,
+            "current_weight_kg": 61,
+            "activity_level": "light",
+            "allergens": [],
+            "avoidances": [],
+            "disliked_foods": [],
+        },
+    )
+    session = _database_session(client)
+    candidate = _candidate_payload()
+    recommendation = AiRecommendationSession(
+        user_id=_current_user_id(client),
+        filters={"meal_type": "dinner"},
+        query_text="想吃清淡鸡肉",
+        displayed_fingerprints=[candidate["content_fingerprint"]],
+        candidates=[candidate],
+        expires_at=datetime.now(timezone.utc) + timedelta(hours=-1 if expired else 1),
+    )
+    session.add(recommendation)
+    session.commit()
+    session.close()
+    return candidate["candidate_id"]
+
+
+def test_saving_candidate_creates_private_favorite_and_is_idempotent(client, auth_headers):
+    candidate_id = _seed_candidate(client, auth_headers)
+    url = f"/api/v1/ai/recipe-candidates/{candidate_id}/save"
+
+    first = client.post(url, headers=auth_headers)
+    second = client.post(url, headers=auth_headers)
+
+    assert first.status_code == 201, first.text
+    assert second.status_code == 200
+    assert first.json()["id"] == second.json()["id"]
+    assert first.json()["visibility"] == "private"
+    assert first.json()["is_favorite"] is True
+
+
+def test_expired_candidate_cannot_be_saved(client, auth_headers):
+    candidate_id = _seed_candidate(client, auth_headers, expired=True)
+
+    response = client.post(f"/api/v1/ai/recipe-candidates/{candidate_id}/save", headers=auth_headers)
+
+    assert response.status_code == 404

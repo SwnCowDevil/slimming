@@ -171,5 +171,7 @@ def remove_favorite(session: Session, user_id: str, recipe_id: str) -> bool:
     )
     if favorite is not None:
         session.delete(favorite)
-        session.commit()
+    if recipe.visibility == "private" and recipe.owner_user_id == user_id:
+        recipe.content_status = "archived"
+    session.commit()
     return True

@@ -1,16 +1,18 @@
-from fastapi import APIRouter, Depends, Header, Request, status
+from fastapi import APIRouter, Depends, Header, Request, Response, status
 from sqlalchemy.orm import Session
 
 from app.ai_recipes.provider import AiProviderConfigurationError, AiRecipeProvider, get_ai_recipe_provider
 from app.ai_recipes.schemas import RecommendationBatch, RecommendationCreateRequest
-from app.ai_recipes.service import create_recommendation_session, next_recommendation_batch
+from app.ai_recipes.service import create_recommendation_session, next_recommendation_batch, save_candidate
 from app.auth.models import User
 from app.auth.service import get_current_user
 from app.core.config import Settings, get_settings
 from app.db.session import get_session
+from app.recipes.schemas import RecipeRead
 
 
 router = APIRouter(prefix="/api/v1/ai/recipe-recommendations", tags=["ai-recipes"])
+candidate_router = APIRouter(prefix="/api/v1/ai/recipe-candidates", tags=["ai-recipes"])
 
 
 def _provider(request: Request, settings: Settings) -> AiRecipeProvider | None:
@@ -65,3 +67,15 @@ def next_recipes(
         settings,
         _provider(request, settings),
     )
+
+
+@candidate_router.post("/{candidate_id}/save", response_model=RecipeRead)
+def save_recipe_candidate(
+    candidate_id: str,
+    response: Response,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+) -> RecipeRead:
+    recipe = save_candidate(session, current_user.id, candidate_id)
+    response.status_code = status.HTTP_201_CREATED if recipe.was_created else status.HTTP_200_OK
+    return RecipeRead.model_validate(recipe)

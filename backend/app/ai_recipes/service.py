@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 from uuid import uuid4
 
 from fastapi import HTTPException, status
@@ -13,12 +14,14 @@ from app.ai_recipes.provider import AiProviderError, AiRecipeProvider
 from app.ai_recipes.schemas import (
     RecommendationBatch,
     RecommendationCreateRequest,
+    RecipeCandidate,
     RecipeGenerationRequest,
 )
-from app.ai_recipes.validation import validate_candidate
+from app.ai_recipes.validation import SAFETY_RULE_VERSION, validate_candidate
 from app.auth.models import User
 from app.core.config import Settings
 from app.pregnancies.service import derive_gestation, require_active_episode
+from app.recipes.models import Recipe, RecipeFavorite, RecipeItem
 from app.recipes.schemas import RecipeRead
 from app.recipes.service import list_visible_recipes
 
@@ -318,3 +321,124 @@ def purge_expired_sessions(session: Session, now: datetime | None = None, limit:
     session.execute(delete(AiRecommendationSession).where(AiRecommendationSession.id.in_(ids)))
     session.commit()
     return len(ids)
+
+
+def _aware(value: datetime) -> datetime:
+    return value if value.tzinfo is not None else value.replace(tzinfo=timezone.utc)
+
+
+def save_candidate(session: Session, user_id: str, candidate_id: str) -> Recipe:
+    now = utcnow()
+    recommendation_session = None
+    candidate_payload = None
+    sessions = session.scalars(
+        select(AiRecommendationSession)
+        .where(AiRecommendationSession.user_id == user_id)
+        .order_by(AiRecommendationSession.created_at.desc())
+    ).all()
+    for item in sessions:
+        if _aware(item.expires_at) <= now:
+            continue
+        match = next(
+            (candidate for candidate in item.candidates if candidate.get("candidate_id") == candidate_id),
+            None,
+        )
+        if match is not None:
+            recommendation_session = item
+            candidate_payload = match
+            break
+    if recommendation_session is None or candidate_payload is None:
+        raise HTTPException(status_code=404, detail="推荐候选不存在或已过期")
+
+    candidate = RecipeCandidate.model_validate(candidate_payload)
+    episode = require_active_episode(session, user_id)
+    preferences = episode.preferences
+    validation = validate_candidate(
+        candidate,
+        set(preferences.allergens or []),
+        set([*(preferences.avoidances or []), *(preferences.disliked_foods or [])]),
+    )
+    if not validation.allowed or validation.normalized_candidate is None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"action": "adjust_recommendation", "message": "该推荐未通过最新孕期安全规则"},
+        )
+    candidate = validation.normalized_candidate
+    existing = session.scalar(
+        select(Recipe).where(
+            Recipe.owner_user_id == user_id,
+            Recipe.content_fingerprint == candidate.content_fingerprint,
+        )
+    )
+    if existing is not None:
+        favorite = session.scalar(
+            select(RecipeFavorite).where(
+                RecipeFavorite.user_id == user_id,
+                RecipeFavorite.recipe_id == existing.id,
+            )
+        )
+        if favorite is None:
+            session.add(RecipeFavorite(user_id=user_id, recipe_id=existing.id))
+        existing.content_status = "published"
+        session.commit()
+        existing.is_favorite = True
+        existing.was_created = False
+        return existing
+
+    event = session.scalar(
+        select(AiRecipeRequestEvent)
+        .where(AiRecipeRequestEvent.session_id == recommendation_session.id)
+        .order_by(AiRecipeRequestEvent.created_at.desc())
+    )
+    nutrition = candidate.nutrition_per_serving
+    recipe = Recipe(
+        title=candidate.title,
+        description=candidate.summary,
+        minutes=candidate.minutes,
+        tags=candidate.tags,
+        source_type="ai",
+        visibility="private",
+        owner_user_id=user_id,
+        original_query=recommendation_session.query_text[:300],
+        model_name=event.provider_model if event is not None else None,
+        prompt_version=event.prompt_version if event is not None else None,
+        safety_rule_version=SAFETY_RULE_VERSION,
+        pregnancy_safety="safe",
+        safety_summary="已按当前孕期档案和食材规则复核，肉蛋水产需彻底熟透",
+        allergen_codes=candidate.allergens,
+        nutrition_source=candidate.nutrition_source,
+        nutrition_confidence=candidate.nutrition_confidence,
+        content_fingerprint=candidate.content_fingerprint,
+        energy_kcal=Decimal(str(nutrition.energy_kcal)),
+        protein_g=Decimal(str(nutrition.protein_g)),
+        fat_g=Decimal(str(nutrition.fat_g)),
+        carbohydrate_g=Decimal(str(nutrition.carbohydrate_g)),
+        fiber_g=Decimal(str(nutrition.fiber_g)),
+    )
+    for position, ingredient in enumerate(candidate.ingredients):
+        recipe.items.append(
+            RecipeItem(
+                source_food_id=ingredient.source_food_id,
+                ingredient_name_zh=ingredient.name_zh,
+                original_measure=f"{ingredient.quantity:g}{ingredient.unit}",
+                grams=Decimal(str(ingredient.grams)),
+                position=position,
+                nutrition_source=ingredient.nutrition_source,
+                estimated_energy_kcal_per_100g=Decimal(str(ingredient.energy_kcal_per_100g)),
+                estimated_protein_g_per_100g=Decimal(str(ingredient.protein_g_per_100g)),
+                estimated_fat_g_per_100g=Decimal(str(ingredient.fat_g_per_100g)),
+                estimated_carbohydrate_g_per_100g=Decimal(str(ingredient.carbohydrate_g_per_100g)),
+                estimated_fiber_g_per_100g=Decimal(str(ingredient.fiber_g_per_100g)),
+            )
+        )
+    recipe.favorites.append(RecipeFavorite(user_id=user_id))
+    try:
+        session.add(recipe)
+        session.commit()
+        session.refresh(recipe)
+    except Exception:
+        session.rollback()
+        raise
+    recipe.is_favorite = True
+    recipe.was_created = True
+    return recipe

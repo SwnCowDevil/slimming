@@ -2,7 +2,7 @@ from datetime import date
 from decimal import Decimal
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class RecipeItemRead(BaseModel):
@@ -44,9 +44,16 @@ class RecipeRead(BaseModel):
     is_favorite: bool = False
 
 
+class ConfirmedRecipeItem(BaseModel):
+    item_id: str = Field(min_length=1, max_length=36)
+    ingredient_name_zh: str = Field(min_length=1, max_length=120)
+    grams: Decimal = Field(gt=0, le=5000)
+
+
 class RecipeRecordRequest(BaseModel):
     meal_date: date
     meal_type: Literal["breakfast", "lunch", "dinner", "snack"]
+    confirmed_items: list[ConfirmedRecipeItem] | None = None
 
 
 class RecipeRecordResponse(BaseModel):

@@ -10,6 +10,7 @@ from app.meals.models import MealEntry
 from app.meals.schemas import MealEntryCreate
 from app.pregnancies.models import MealSchedule
 from app.pregnancies.service import get_active_episode
+from app.recipes.models import Recipe, RecipeItem
 
 
 DEFAULT_MEAL_NAMES = {
@@ -82,6 +83,72 @@ def create_meal_entry(
         fiber_g=(food.fiber_g_100g * ratio).quantize(Decimal("0.01")),
         provider=food.provider,
         dataset_version=food.dataset_version,
+        idempotency_key=idempotency_key,
+    )
+    session.add(entry)
+    if commit:
+        session.commit()
+        session.refresh(entry)
+    else:
+        session.flush()
+    return entry
+
+
+def create_estimated_meal_entry(
+    session: Session,
+    user_id: str,
+    recipe: Recipe,
+    item: RecipeItem,
+    grams: Decimal,
+    meal_date,
+    meal_type: str,
+    idempotency_key: str,
+    ingredient_name_zh: str | None = None,
+    commit: bool = True,
+) -> MealEntry:
+    existing = session.scalar(
+        select(MealEntry).where(
+            MealEntry.user_id == user_id,
+            MealEntry.idempotency_key == idempotency_key,
+        )
+    )
+    if existing is not None:
+        return existing
+    nutrient_values = (
+        item.estimated_energy_kcal_per_100g,
+        item.estimated_protein_g_per_100g,
+        item.estimated_fat_g_per_100g,
+        item.estimated_carbohydrate_g_per_100g,
+        item.estimated_fiber_g_per_100g,
+    )
+    if any(value is None for value in nutrient_values):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"action": "confirm_ingredients", "message": "缺少可确认的营养估算"},
+        )
+    episode = get_active_episode(session, user_id)
+    ratio = grams / Decimal("100")
+    entry = MealEntry(
+        user_id=user_id,
+        pregnancy_episode_id=episode.id if episode is not None else None,
+        subject_user_id=user_id,
+        created_by_user_id=user_id,
+        meal_name_snapshot=DEFAULT_MEAL_NAMES[meal_type],
+        meal_date=meal_date,
+        meal_type=meal_type,
+        food_id=None,
+        source_recipe_id=recipe.id,
+        source_food_id=f"ai:{item.id}",
+        food_name=ingredient_name_zh or item.ingredient_name_zh,
+        grams=grams,
+        energy_kcal=(item.estimated_energy_kcal_per_100g * ratio).quantize(Decimal("0.01")),
+        protein_g=(item.estimated_protein_g_per_100g * ratio).quantize(Decimal("0.01")),
+        fat_g=(item.estimated_fat_g_per_100g * ratio).quantize(Decimal("0.01")),
+        carbohydrate_g=(item.estimated_carbohydrate_g_per_100g * ratio).quantize(Decimal("0.01")),
+        fiber_g=(item.estimated_fiber_g_per_100g * ratio).quantize(Decimal("0.01")),
+        provider="ai_estimated",
+        dataset_version=recipe.prompt_version or "unknown",
+        nutrition_source="ai_estimated",
         idempotency_key=idempotency_key,
     )
     session.add(entry)
