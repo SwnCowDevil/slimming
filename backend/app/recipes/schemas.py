@@ -21,6 +21,17 @@ class RecipeRead(BaseModel):
     minutes: int
     tags: list[str]
     image_url: str | None
+    content_status: str
+    content_version: str
+    pregnancy_safety: str
+    safety_summary: str
+    allergen_codes: list[str]
+    subtitle: str | None
+    energy_kcal: Decimal | None
+    protein_g: Decimal | None
+    fat_g: Decimal | None
+    carbohydrate_g: Decimal | None
+    fiber_g: Decimal | None
     items: list[RecipeItemRead]
 
 

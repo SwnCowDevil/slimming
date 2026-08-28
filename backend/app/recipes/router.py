@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
@@ -9,6 +9,7 @@ from app.meals.schemas import MealEntryCreate
 from app.meals.service import create_meal_entry
 from app.recipes.models import Recipe
 from app.recipes.schemas import RecipeRead, RecipeRecordRequest, RecipeRecordResponse
+from app.recipes.service import list_reviewed_recipes
 
 
 router = APIRouter(prefix="/api/v1/recipes", tags=["recipes"])
@@ -16,10 +17,23 @@ router = APIRouter(prefix="/api/v1/recipes", tags=["recipes"])
 
 @router.get("", response_model=list[RecipeRead])
 def list_recipes(
-    _: User = Depends(get_current_user),
+    max_minutes: int | None = Query(default=None, ge=1, le=240),
+    tag: str | None = Query(default=None, min_length=1, max_length=40),
+    high_protein: bool = Query(default=False),
+    limit: int = Query(default=20, ge=1, le=50),
+    offset: int = Query(default=0, ge=0),
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ) -> list[Recipe]:
-    return list(session.scalars(select(Recipe).options(selectinload(Recipe.items))).all())
+    return list_reviewed_recipes(
+        session,
+        current_user.id,
+        max_minutes=max_minutes,
+        tag=tag,
+        high_protein=high_protein,
+        limit=limit,
+        offset=offset,
+    )
 
 
 @router.post("/{recipe_id}/record", response_model=RecipeRecordResponse)

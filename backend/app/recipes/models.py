@@ -16,6 +16,17 @@ class Recipe(Base):
     minutes: Mapped[int] = mapped_column(Integer, default=15)
     tags: Mapped[list[str]] = mapped_column(JSON, default=list)
     image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    content_status: Mapped[str] = mapped_column(String(20), default="published", index=True)
+    content_version: Mapped[str] = mapped_column(String(40), default="v1")
+    pregnancy_safety: Mapped[str] = mapped_column(String(20), default="safe", index=True)
+    safety_summary: Mapped[str] = mapped_column(String(255), default="食材信息已复核")
+    allergen_codes: Mapped[list[str]] = mapped_column(JSON, default=list)
+    subtitle: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    energy_kcal: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
+    protein_g: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
+    fat_g: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
+    carbohydrate_g: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
+    fiber_g: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
     items: Mapped[list["RecipeItem"]] = relationship(
         back_populates="recipe", cascade="all, delete-orphan", order_by="RecipeItem.position"
     )

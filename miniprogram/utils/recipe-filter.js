@@ -6,4 +6,24 @@ function applyRecipeFilters(recipes, filters = {}) {
     return true;
   });
 }
-module.exports = { applyRecipeFilters };
+
+function normalizeRecipe(item, index, inspiration) {
+  const fallbacks = inspiration || [];
+  const fallback = fallbacks.length ? fallbacks[index % fallbacks.length] : {};
+  const tags = Array.isArray(item.tags) ? item.tags : [];
+  const kcal = Number(item.energy_kcal);
+  return {
+    ...item,
+    tags,
+    image: item.image_url || fallback.image || "",
+    kcal: Number.isFinite(kcal) ? Math.round(kcal) : null,
+    kcalLabel: Number.isFinite(kcal) ? `${Math.round(kcal)} kcal` : "营养信息待完善",
+    subtitle:
+      item.subtitle ||
+      item.safety_summary ||
+      (tags.length ? tags.join(" · ") : "食材信息已复核"),
+    recordable: true,
+  };
+}
+
+module.exports = { applyRecipeFilters, normalizeRecipe };
