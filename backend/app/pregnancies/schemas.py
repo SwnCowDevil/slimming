@@ -82,3 +82,43 @@ class PregnancyRead(BaseModel):
     product_mode: str
     gestation: GestationRead
     preferences: PregnancyPreferenceRead
+
+
+class MealScheduleCreate(BaseModel):
+    display_name: str = Field(min_length=1, max_length=40)
+    scheduled_time: str = Field(pattern=r"^([01]\d|2[0-3]):[0-5]\d$")
+    position: int = Field(ge=0, le=20)
+
+
+class MealScheduleUpdate(BaseModel):
+    display_name: str | None = Field(default=None, min_length=1, max_length=40)
+    scheduled_time: str | None = Field(
+        default=None, pattern=r"^([01]\d|2[0-3]):[0-5]\d$"
+    )
+    position: int | None = Field(default=None, ge=0, le=20)
+    enabled: bool | None = None
+
+
+class MealScheduleRead(BaseModel):
+    id: str
+    code: str
+    display_name: str
+    scheduled_time: str
+    position: int
+    enabled: bool
+
+
+FeelingCode = Literal["normal", "nausea", "reflux", "constipation", "low_appetite"]
+
+
+class WellbeingWrite(BaseModel):
+    feeling_codes: list[FeelingCode] = Field(default_factory=list, max_length=5)
+    note: str | None = Field(default=None, max_length=500)
+
+
+class WellbeingRead(BaseModel):
+    id: str | None
+    log_date: date
+    feeling_codes: list[str]
+    note: str | None
+    updated_at: datetime | None

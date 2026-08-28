@@ -1,18 +1,29 @@
 from datetime import date, datetime, timezone
 from decimal import Decimal
+from uuid import uuid4
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.auth.models import User
-from app.pregnancies.models import MealSchedule, PregnancyEpisode, PregnancyPreference
+from app.pregnancies.models import (
+    DailyWellbeingLog,
+    MealSchedule,
+    PregnancyEpisode,
+    PregnancyPreference,
+)
 from app.pregnancies.schemas import (
     GestationRead,
+    MealScheduleCreate,
+    MealScheduleRead,
+    MealScheduleUpdate,
     PregnancyCreate,
     PregnancyPreferenceRead,
     PregnancyRead,
     PregnancyUpdate,
+    WellbeingRead,
+    WellbeingWrite,
 )
 from app.weights.models import WeightEntry
 
@@ -164,3 +175,128 @@ def end_episode(session: Session, user: User, episode: PregnancyEpisode) -> Preg
     session.commit()
     session.refresh(episode)
     return episode
+
+
+def to_schedule_read(schedule: MealSchedule) -> MealScheduleRead:
+    return MealScheduleRead(
+        id=schedule.id,
+        code=schedule.code,
+        display_name=schedule.display_name,
+        scheduled_time=schedule.scheduled_time,
+        position=schedule.position,
+        enabled=schedule.enabled,
+    )
+
+
+def list_schedules(session: Session, user_id: str) -> list[MealSchedule]:
+    episode = require_active_episode(session, user_id)
+    return list(
+        session.scalars(
+            select(MealSchedule)
+            .where(MealSchedule.pregnancy_episode_id == episode.id)
+            .order_by(MealSchedule.position, MealSchedule.id)
+        ).all()
+    )
+
+
+def create_schedule(
+    session: Session, user_id: str, body: MealScheduleCreate
+) -> MealSchedule:
+    episode = require_active_episode(session, user_id)
+    occupied = session.scalar(
+        select(MealSchedule).where(
+            MealSchedule.pregnancy_episode_id == episode.id,
+            MealSchedule.position == body.position,
+        )
+    )
+    if occupied is not None:
+        raise HTTPException(status_code=409, detail="该排序位置已被占用")
+    schedule = MealSchedule(
+        pregnancy_episode_id=episode.id,
+        code=f"custom_{str(uuid4()).replace('-', '')[:12]}",
+        display_name=body.display_name,
+        scheduled_time=body.scheduled_time,
+        position=body.position,
+    )
+    session.add(schedule)
+    session.commit()
+    session.refresh(schedule)
+    return schedule
+
+
+def update_schedule(
+    session: Session, user_id: str, schedule_id: str, body: MealScheduleUpdate
+) -> MealSchedule:
+    episode = require_active_episode(session, user_id)
+    schedule = session.scalar(
+        select(MealSchedule).where(
+            MealSchedule.id == schedule_id,
+            MealSchedule.pregnancy_episode_id == episode.id,
+        )
+    )
+    if schedule is None:
+        raise HTTPException(status_code=404, detail="餐次不存在")
+    payload = body.model_dump(exclude_unset=True)
+    if "position" in payload and payload["position"] != schedule.position:
+        occupied = session.scalar(
+            select(MealSchedule).where(
+                MealSchedule.pregnancy_episode_id == episode.id,
+                MealSchedule.position == payload["position"],
+            )
+        )
+        if occupied is not None:
+            raise HTTPException(status_code=409, detail="该排序位置已被占用")
+    for name, value in payload.items():
+        setattr(schedule, name, value)
+    session.add(schedule)
+    session.commit()
+    session.refresh(schedule)
+    return schedule
+
+
+def get_wellbeing(
+    session: Session, user_id: str, log_date: date
+) -> DailyWellbeingLog | None:
+    episode = require_active_episode(session, user_id)
+    return session.scalar(
+        select(DailyWellbeingLog).where(
+            DailyWellbeingLog.pregnancy_episode_id == episode.id,
+            DailyWellbeingLog.log_date == log_date,
+        )
+    )
+
+
+def put_wellbeing(
+    session: Session, user_id: str, log_date: date, body: WellbeingWrite
+) -> DailyWellbeingLog:
+    episode = require_active_episode(session, user_id)
+    item = session.scalar(
+        select(DailyWellbeingLog).where(
+            DailyWellbeingLog.pregnancy_episode_id == episode.id,
+            DailyWellbeingLog.log_date == log_date,
+        )
+    )
+    if item is None:
+        item = DailyWellbeingLog(
+            pregnancy_episode_id=episode.id, user_id=user_id, log_date=log_date
+        )
+    item.feeling_codes = list(dict.fromkeys(body.feeling_codes))
+    item.note = body.note
+    session.add(item)
+    session.commit()
+    session.refresh(item)
+    return item
+
+
+def to_wellbeing_read(item: DailyWellbeingLog | None, log_date: date) -> WellbeingRead:
+    if item is None:
+        return WellbeingRead(
+            id=None, log_date=log_date, feeling_codes=[], note=None, updated_at=None
+        )
+    return WellbeingRead(
+        id=item.id,
+        log_date=item.log_date,
+        feeling_codes=item.feeling_codes,
+        note=item.note,
+        updated_at=item.updated_at,
+    )

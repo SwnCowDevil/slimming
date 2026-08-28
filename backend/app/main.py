@@ -14,7 +14,11 @@ from app.ai_coach.router import router as ai_router
 from app.dietitians.router import directory_router as dietitians_router
 from app.dietitians.router import request_router as dietitian_requests_router
 from app.media.router import router as media_router
-from app.pregnancies.router import router as pregnancies_router
+from app.pregnancies.router import (
+    router as pregnancies_router,
+    schedule_router as meal_schedules_router,
+    wellbeing_router,
+)
 
 
 def create_app(
@@ -40,6 +44,8 @@ def create_app(
     app.include_router(dietitian_requests_router)
     app.include_router(media_router)
     app.include_router(pregnancies_router)
+    app.include_router(meal_schedules_router)
+    app.include_router(wellbeing_router)
 
     @app.get("/health")
     def health() -> dict[str, str]:
