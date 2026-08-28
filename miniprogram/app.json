@@ -6,6 +6,7 @@
     "pages/record/index",
     "pages/recipes/index",
     "pages/analysis/index",
+    "pages/family/index",
     "pages/profile/index",
     "pages/recipe-detail/index",
     "pages/food-search/index",
@@ -35,8 +36,8 @@
       { "pagePath": "pages/today/index", "text": "今日" },
       { "pagePath": "pages/record/index", "text": "记录" },
       { "pagePath": "pages/recipes/index", "text": "食谱" },
-      { "pagePath": "pages/analysis/index", "text": "分析" },
-      { "pagePath": "pages/profile/index", "text": "我的" }
+      { "pagePath": "pages/analysis/index", "text": "趋势" },
+      { "pagePath": "pages/family/index", "text": "家庭" }
     ]
   },
   "style": "v2",

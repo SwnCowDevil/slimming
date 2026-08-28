@@ -1,14 +1,14 @@
 page {
-  --color-primary: #78A992;
-  --color-primary-soft: #EAF4ED;
-  --color-page: #F6F8F5;
+  --color-primary: #9BCDB2;
+  --color-primary-soft: #EAF6EF;
+  --color-page: #F8FAF8;
   --color-warm: #F7C98B;
   --color-orange: #E8862D;
-  --color-blue-soft: #EAF2F9;
-  --color-blue: #3E7CB1;
-  --color-text: #47515A;
-  --color-muted: #6F787E;
-  --color-caption: #8B9A90;
+  --color-blue-soft: #EDF5FA;
+  --color-blue: #86B6DC;
+  --color-text: #59645E;
+  --color-muted: #77827C;
+  --color-caption: #98A39D;
   --color-border: #E3EBE5;
   --color-card: #FFFFFF;
   --radius-card: 40rpx;

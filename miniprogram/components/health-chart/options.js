@@ -19,4 +19,20 @@ function buildCalorieOptions(days, width, height) {
   return options;
 }
 
-module.exports = { palette, buildWeightOptions, buildCalorieOptions };
+function buildPregnancyWeightOptions(points, width, height) {
+  if (!points || points.length < 2) return null;
+  const options = base(width, height);
+  return { ...options, type: "line", categories: points.map((p) => p.date), series: [
+    { name: "体重记录", color: "#86B6DC", data: points.map((p) => p.weight_kg), format: (v) => `${v}kg` },
+    { name: "7日均线", color: "#C7DDEF", data: points.map((p) => p.moving_average_7d), format: (v) => `${v}kg` },
+  ], extra: { lineStyle: "curve" } };
+}
+
+function buildPregnancyFactsOptions(summary, width, height) {
+  const source = Array.isArray(summary) ? summary[0] || {} : summary || {};
+  return { ...base(width, height), type: "column", categories: ["记录天数", "食物类别"], series: [
+    { name: "周期记录", color: "#F2C48D", data: [source.recorded_day_count || 0, source.food_category_diversity || 0] },
+  ], extra: { column: { width: 28 } } };
+}
+
+module.exports = { palette, buildWeightOptions, buildCalorieOptions, buildPregnancyWeightOptions, buildPregnancyFactsOptions };
