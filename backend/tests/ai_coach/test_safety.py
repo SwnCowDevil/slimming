@@ -10,6 +10,12 @@ def test_pregnancy_context_routes_to_professional():
     assert result.action == "refer_professional"
 
 
+def test_pregnancy_recipe_recommendation_is_bounded_and_allowed():
+    result = evaluate_safety(AiContext(pregnancy=True), workflow="recipe_recommendation")
+
+    assert result.action == "allow_limited"
+
+
 def test_ai_draft_does_not_create_meal_before_confirmation(client, auth_headers):
     fixture = Path(__file__).parents[1] / "foods" / "fixtures" / "tka_sample.json"
     client.post(

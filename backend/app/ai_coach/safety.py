@@ -2,6 +2,7 @@ from app.ai_coach.schemas import AiContext, SafetyResult
 
 
 PREGNANCY_ALLOWED_WORKFLOWS = {
+    "recipe_recommendation",
     "recipe_swap",
     "record_explanation",
     "weekly_reflection",
