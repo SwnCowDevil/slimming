@@ -22,6 +22,7 @@ class RecipeRead(BaseModel):
     id: str
     title: str
     description: str
+    steps: list[str]
     minutes: int
     tags: list[str]
     image_url: str | None

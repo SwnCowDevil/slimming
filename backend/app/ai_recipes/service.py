@@ -394,6 +394,7 @@ def save_candidate(session: Session, user_id: str, candidate_id: str) -> Recipe:
     recipe = Recipe(
         title=candidate.title,
         description=candidate.summary,
+        steps=candidate.steps,
         minutes=candidate.minutes,
         tags=candidate.tags,
         source_type="ai",

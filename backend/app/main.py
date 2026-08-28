@@ -9,7 +9,7 @@ from app.meals.router import router as meals_router
 from app.weights.router import router as weights_router
 from app.habits.router import router as habits_router
 from app.analytics.router import router as analytics_router
-from app.recipes.router import router as recipes_router
+from app.recipes.router import admin_router as recipe_admin_router, router as recipes_router
 from app.ai_coach.router import router as ai_router
 from app.dietitians.router import directory_router as dietitians_router
 from app.dietitians.router import request_router as dietitian_requests_router
@@ -43,6 +43,7 @@ def create_app(
     app.include_router(habits_router)
     app.include_router(analytics_router)
     app.include_router(recipes_router)
+    app.include_router(recipe_admin_router)
     app.include_router(ai_router)
     app.include_router(dietitians_router)
     app.include_router(dietitian_requests_router)

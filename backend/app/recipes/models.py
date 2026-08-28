@@ -15,6 +15,7 @@ class Recipe(Base):
     id: Mapped[str] = mapped_column(String(64), primary_key=True, default=lambda: str(uuid4()))
     title: Mapped[str] = mapped_column(String(255), index=True)
     description: Mapped[str] = mapped_column(Text, default="")
+    steps: Mapped[list[str]] = mapped_column(JSON, default=list)
     minutes: Mapped[int] = mapped_column(Integer, default=15)
     tags: Mapped[list[str]] = mapped_column(JSON, default=list)
     image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)

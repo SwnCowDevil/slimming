@@ -1,3 +1,5 @@
+from pathlib import Path
+from secrets import compare_digest
 from typing import Literal
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Response, status
@@ -9,6 +11,9 @@ from app.db.session import get_session
 from app.meals.schemas import MealEntryCreate
 from app.meals.service import create_estimated_meal_entry, create_meal_entry
 from app.foods.tka_provider import TkaProvider
+from app.foods.schemas import ImportReport, ImportRequest
+from app.core.config import Settings, get_settings
+from app.recipes.importer import PlatformRecipeImporter
 from app.recipes.models import Recipe
 from app.recipes.schemas import RecipeRead, RecipeRecordRequest, RecipeRecordResponse
 from app.recipes.service import (
@@ -20,6 +25,26 @@ from app.recipes.service import (
 
 
 router = APIRouter(prefix="/api/v1/recipes", tags=["recipes"])
+admin_router = APIRouter(prefix="/api/v1/admin/recipes", tags=["recipe-admin"])
+
+
+@admin_router.post("/import", response_model=ImportReport)
+def import_platform_recipes(
+    body: ImportRequest,
+    admin_import_key: str = Header(default="", alias="X-Admin-Import-Key"),
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> ImportReport:
+    if not settings.admin_import_key or not compare_digest(admin_import_key, settings.admin_import_key):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="无食谱库管理权限")
+    root = settings.tka_import_root.resolve()
+    path = Path(body.path).resolve()
+    if path != root and root not in path.parents:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="导入文件不在允许目录")
+    if not path.is_file():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="导入文件不存在")
+    return PlatformRecipeImporter(session).import_file(path, body.version, dry_run=body.dry_run)
 
 
 @router.get("", response_model=list[RecipeRead])
