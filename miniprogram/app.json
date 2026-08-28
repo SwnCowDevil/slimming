@@ -1,10 +1,7 @@
 {
   "pages": [
     "pages/onboarding/welcome/index",
-    "pages/onboarding/goal/index",
-    "pages/onboarding/body/index",
-    "pages/onboarding/life/index",
-    "pages/onboarding/plan/index",
+    "pages/onboarding/pregnancy/index",
     "pages/today/index",
     "pages/record/index",
     "pages/recipes/index",

@@ -1,0 +1,27 @@
+<view class="page setup">
+  <view class="eyebrow">孕期饮食与记录</view>
+  <view class="title">先建立你的孕期档案</view>
+  <view class="subtitle">用于显示孕周、整理餐次和提供经过限制的饮食信息。不会生成减重目标，也不能代替产检或医疗建议。</view>
+
+  <view class="form-card">
+    <view class="field-group"><text>预产期</text><picker mode="date" value="{{dueDate}}" bindchange="dueDateChange"><view class="field picker">{{dueDate}}</view></picker></view>
+    <view class="field-grid">
+      <view class="field-group"><text>身高（cm）</text><input class="field" type="digit" value="{{heightCm}}" data-field="heightCm" bindinput="input"/></view>
+      <view class="field-group"><text>当前体重（kg）</text><input class="field" type="digit" value="{{currentWeightKg}}" data-field="currentWeightKg" bindinput="input" placeholder="必填"/></view>
+    </view>
+    <view class="field-group"><text>孕前体重（kg，可选）</text><input class="field" type="digit" value="{{prePregnancyWeightKg}}" data-field="prePregnancyWeightKg" bindinput="input" placeholder="不清楚可留空"/></view>
+    <view class="field-group"><text>日常活动量</text><picker mode="selector" range="{{activityLabels}}" value="{{activityIndex}}" bindchange="activityChange"><view class="field picker">{{activityLabels[activityIndex]}}</view></picker></view>
+  </view>
+
+  <view class="form-card optional">
+    <view class="block-title">饮食偏好与需要避开的食物</view>
+    <view class="hint">多项内容请用逗号分隔，之后可以修改。</view>
+    <view class="field-group"><text>过敏原</text><input class="field" value="{{allergens}}" data-field="allergens" bindinput="input" placeholder="例如：花生，牛奶"/></view>
+    <view class="field-group"><text>需要避免</text><input class="field" value="{{avoidances}}" data-field="avoidances" bindinput="input" placeholder="例如：生食"/></view>
+    <view class="field-group"><text>饮食偏好</text><input class="field" value="{{dietaryPreferences}}" data-field="dietaryPreferences" bindinput="input" placeholder="例如：清淡"/></view>
+    <view class="field-group"><text>不喜欢的食物</text><input class="field" value="{{dislikedFoods}}" data-field="dislikedFoods" bindinput="input" placeholder="可选"/></view>
+  </view>
+
+  <view class="privacy-note">预产期、体重和饮食偏好属于健康相关信息，仅用于本小程序的孕期记录与筛选。家属查看需由你主动邀请并授权，可随时撤销。</view>
+  <button class="button-primary" loading="{{submitting}}" disabled="{{submitting}}" bindtap="submit">保存并进入今日</button>
+</view>
