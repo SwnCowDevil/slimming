@@ -117,6 +117,40 @@ class TkaProvider:
         ).all()
         return [self._hit(food, locale) for food in foods]
 
+    def match_exact(self, name: str, locale: str = "zh-CN") -> Food | None:
+        term = "".join(name.strip().casefold().split())
+        if not term:
+            return None
+        alias_food = self.session.scalar(
+            select(Food)
+            .join(FoodAlias)
+            .where(Food.provider == self.provider_name, FoodAlias.locale == locale)
+            .where(FoodAlias.name.ilike(name.strip()))
+            .limit(1)
+        )
+        if alias_food is not None and any(
+            "".join(alias.name.strip().casefold().split()) == term
+            for alias in alias_food.aliases
+            if alias.locale == locale
+        ):
+            return alias_food
+
+        foods = self.session.scalars(
+            select(Food).where(
+                Food.provider == self.provider_name,
+                or_(
+                    Food.name_en.ilike(name.strip()),
+                    Food.name_et.ilike(name.strip()),
+                    cast(Food.synonyms, String).ilike(f'%"{name.strip()}"%'),
+                ),
+            )
+        ).all()
+        for food in foods:
+            names = [food.name_en, food.name_et or "", *(food.synonyms or [])]
+            if any("".join(value.strip().casefold().split()) == term for value in names):
+                return food
+        return None
+
     def is_ready(self) -> bool:
         return self.session.scalar(
             select(Food.id).where(Food.provider == self.provider_name).limit(1)
