@@ -10,7 +10,8 @@
 - 不展示孕期目标体重、热量赤字、掉秤或断食建议。
 - 食谱 Tab 保留原生小程序原有信息结构和视觉风格，叠加已审核孕期元数据。
 - 家属使用独立微信身份，所有读取与代记由服务端逐项校验，孕妇可撤销授权。
-- AI 只开放食物候选、食谱替换解释和周记录整理等白名单流程，不能代替专业医疗意见。
+- AI 食谱推荐通过自有 FastAPI 后端调用 DeepSeek 官方接口；客户端不接触密钥，候选必须经过确定性孕期安全规则，不能代替专业医疗意见。
+- 内置 27 条项目自有基础食谱。AI 不可用时自动回退到已审核平台食谱；用户收藏的 AI 食谱仅自己可见。
 
 ## 快速开始
 
@@ -20,12 +21,15 @@ backend/.venv/bin/pip install -e 'backend[dev]'
 cp backend/.env.example backend/.env
 npm install --prefix miniprogram
 ./scripts/start-local.sh
+./scripts/import-platform-recipes.sh --execute
 ./scripts/open-wechat-devtools.sh
 ```
 
 本地后端默认监听 `http://127.0.0.1:8000`。若端口被占用，可使用 `LOCAL_PORT=18080 ./scripts/start-local.sh`，并同步修改 `miniprogram/config/env.js` 的开发环境地址。
 
 真实微信 AppSecret、JWT 密钥、AI 密钥、上传私钥和服务器配置不得提交到仓库。
+
+AI 推荐默认关闭。启用前在 `backend/.env` 配置 `SLIMMING_AI_RECIPE_ENABLED=true` 和 DeepSeek 官方 API 密钥；未启用、超时或上游不可用时，接口只返回平台基础食谱，不伪造 AI 结果。
 
 ## 文档
 
