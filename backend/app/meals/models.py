@@ -33,7 +33,10 @@ class MealEntry(Base):
     note: Mapped[str | None] = mapped_column(Text, nullable=True)
     meal_date: Mapped[date] = mapped_column(Date, index=True)
     meal_type: Mapped[str] = mapped_column(String(20))
-    food_id: Mapped[str] = mapped_column(ForeignKey("foods.id"), index=True)
+    food_id: Mapped[str | None] = mapped_column(ForeignKey("foods.id"), nullable=True, index=True)
+    source_recipe_id: Mapped[str | None] = mapped_column(
+        ForeignKey("recipes.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     source_food_id: Mapped[str] = mapped_column(String(128))
     food_name: Mapped[str] = mapped_column(String(255))
     grams: Mapped[Decimal] = mapped_column(Numeric(10, 2))
@@ -44,4 +47,5 @@ class MealEntry(Base):
     fiber_g: Mapped[Decimal] = mapped_column(Numeric(10, 2))
     provider: Mapped[str] = mapped_column(String(32))
     dataset_version: Mapped[str] = mapped_column(String(128))
+    nutrition_source: Mapped[str] = mapped_column(String(20), default="tka")
     idempotency_key: Mapped[str] = mapped_column(String(128))

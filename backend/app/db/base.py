@@ -19,3 +19,4 @@ from app.media import models as media_models  # noqa: E402,F401
 from app.pregnancies import models as pregnancy_models  # noqa: E402,F401
 from app.family import models as family_models  # noqa: E402,F401
 from app.meal_plans import models as meal_plan_models  # noqa: E402,F401
+from app.ai_recipes import models as ai_recipe_models  # noqa: E402,F401
