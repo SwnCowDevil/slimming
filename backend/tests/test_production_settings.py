@@ -30,3 +30,30 @@ def test_production_accepts_complete_secure_configuration():
         enable_dev_auth=False,
     )
     assert settings.environment == "production"
+
+
+def test_production_rejects_enabled_ai_recipes_without_provider_key():
+    with pytest.raises(ValidationError):
+        Settings(
+            environment="production",
+            jwt_secret="j" * 32,
+            wechat_app_id="wx-production",
+            wechat_app_secret="wechat-secret",
+            admin_import_key="i" * 24,
+            ai_recipe_enabled=True,
+            ai_api_key="",
+        )
+
+
+def test_production_allows_ai_recipes_to_remain_disabled_without_key():
+    settings = Settings(
+        environment="production",
+        jwt_secret="j" * 32,
+        wechat_app_id="wx-production",
+        wechat_app_secret="wechat-secret",
+        admin_import_key="i" * 24,
+        enable_dev_auth=False,
+        ai_recipe_enabled=False,
+        ai_api_key="",
+    )
+    assert settings.ai_recipe_enabled is False

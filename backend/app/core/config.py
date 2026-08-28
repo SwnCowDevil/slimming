@@ -21,9 +21,16 @@ class Settings(BaseSettings):
     wechat_app_id: str = ""
     wechat_app_secret: str = ""
     enable_dev_auth: bool = False
-    ai_base_url: str = "https://api.openai.com/v1"
-    ai_model: str = ""
+    ai_provider: Literal["deepseek"] = "deepseek"
+    ai_base_url: str = "https://api.deepseek.com"
+    ai_model: str = "deepseek-v4-flash"
     ai_api_key: str = ""
+    ai_recipe_enabled: bool = False
+    ai_timeout_seconds: float = 25.0
+    ai_max_retries: int = 2
+    ai_recipe_session_ttl_hours: int = 24
+    ai_recipe_user_limit_per_hour: int = 20
+    ai_recipe_ip_limit_per_hour: int = 60
     media_root: Path = Path("./data/media")
     tka_import_root: Path = Path("./data/imports")
     admin_import_key: str = ""
@@ -40,6 +47,11 @@ class Settings(BaseSettings):
             raise ValueError("development authentication must be disabled in production")
         if len(self.admin_import_key) < 24 or self.admin_import_key.startswith("replace-"):
             raise ValueError("production admin import key must be at least 24 characters")
+        if self.ai_recipe_enabled:
+            if not self.ai_api_key:
+                raise ValueError("production AI recipe API key is required when the feature is enabled")
+            if not self.ai_base_url.rstrip("/").startswith("https://api.deepseek.com"):
+                raise ValueError("production AI recipes must use the official DeepSeek API")
         return self
 
 
