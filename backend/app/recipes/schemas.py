@@ -8,8 +8,12 @@ from pydantic import BaseModel, ConfigDict
 class RecipeItemRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    source_food_id: str
+    id: str
+    source_food_id: str | None
+    ingredient_name_zh: str
+    original_measure: str
     grams: Decimal
+    nutrition_source: str
 
 
 class RecipeRead(BaseModel):
@@ -33,6 +37,11 @@ class RecipeRead(BaseModel):
     carbohydrate_g: Decimal | None
     fiber_g: Decimal | None
     items: list[RecipeItemRead]
+    source_type: str
+    visibility: str
+    nutrition_source: str
+    nutrition_confidence: str
+    is_favorite: bool = False
 
 
 class RecipeRecordRequest(BaseModel):
