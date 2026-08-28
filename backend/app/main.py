@@ -21,6 +21,7 @@ from app.pregnancies.router import (
 )
 from app.family.router import router as family_router
 from app.meal_plans.router import router as meal_plans_router
+from app.ai_recipes.router import router as ai_recipes_router
 
 
 def create_app(
@@ -29,6 +30,7 @@ def create_app(
 ) -> FastAPI:
     resolved_settings = settings or get_settings()
     app = FastAPI(title="Slimming API", version="0.1.0")
+    app.state.settings = resolved_settings
     app.state.wechat_gateway = wechat_gateway or HttpWechatGateway(
         resolved_settings.wechat_app_id,
         resolved_settings.wechat_app_secret,
@@ -50,6 +52,7 @@ def create_app(
     app.include_router(wellbeing_router)
     app.include_router(family_router)
     app.include_router(meal_plans_router)
+    app.include_router(ai_recipes_router)
 
     @app.get("/health")
     def health() -> dict[str, str]:

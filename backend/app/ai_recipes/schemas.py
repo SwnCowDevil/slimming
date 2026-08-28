@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -85,3 +86,16 @@ class ProviderGenerationResult(StrictModel):
 
 class ProviderRecipeEnvelope(StrictModel):
     recipes: list[RecipeCandidate] = Field(min_length=1, max_length=8)
+
+
+class RecommendationCreateRequest(StrictModel):
+    filters: RecipeRecommendationFilters = Field(default_factory=RecipeRecommendationFilters)
+    query: str = Field(default="", max_length=300)
+
+
+class RecommendationBatch(StrictModel):
+    session_id: str
+    mode: Literal["ai", "fallback"]
+    candidates: list[dict]
+    expires_at: datetime
+    notice: str
