@@ -8,6 +8,14 @@ page {
   font-size: 28rpx;
 }
 
+button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  line-height: 1.2;
+}
+
 .page { min-height: 100vh; padding: 32rpx 36rpx calc(48rpx + env(safe-area-inset-bottom)); box-sizing: border-box; }
 .eyebrow { color: var(--color-caption); font-size: 24rpx; }
 .title { margin: 12rpx 0; font-size: 42rpx; font-weight: 600; line-height: 1.28; }

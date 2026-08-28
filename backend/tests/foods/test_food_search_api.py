@@ -24,4 +24,11 @@ def test_food_search_returns_empty_items_for_unknown_food(client, auth_headers):
     response = client.get("/api/v1/foods/search?q=不存在的食物", headers=auth_headers)
 
     assert response.status_code == 200
-    assert response.json() == {"items": []}
+    assert response.json() == {"items": [], "catalog_ready": False}
+
+
+def test_food_search_reports_when_the_local_catalog_has_not_been_imported(client, auth_headers):
+    response = client.get("/api/v1/foods/search?q=鸡蛋", headers=auth_headers)
+
+    assert response.status_code == 200
+    assert response.json() == {"items": [], "catalog_ready": False}

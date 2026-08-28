@@ -26,4 +26,22 @@ function normalizeRecipe(item, index, inspiration) {
   };
 }
 
-module.exports = { applyRecipeFilters, normalizeRecipe };
+function searchRecipes(recipes, query) {
+  const term = String(query || "").trim().toLocaleLowerCase();
+  if (!term) return recipes;
+  return recipes.filter((recipe) => {
+    const corpus = [
+      recipe.title,
+      recipe.subtitle,
+      recipe.description,
+      recipe.safety_summary,
+      ...(recipe.tags || []),
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLocaleLowerCase();
+    return corpus.includes(term);
+  });
+}
+
+module.exports = { applyRecipeFilters, normalizeRecipe, searchRecipes };

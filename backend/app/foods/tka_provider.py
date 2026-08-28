@@ -95,6 +95,11 @@ class TkaProvider:
         ).all()
         return [self._hit(food, locale) for food in foods]
 
+    def is_ready(self) -> bool:
+        return self.session.scalar(
+            select(Food.id).where(Food.provider == self.provider_name).limit(1)
+        ) is not None
+
     def get_food(self, source_food_id: str) -> FoodDetail | None:
         food = self.session.scalar(
             select(Food).where(Food.provider == self.provider_name, Food.source_food_id == source_food_id)
@@ -134,4 +139,3 @@ class TkaProvider:
             name=name,
             energy_kcal_100g=food.energy_kcal_100g,
         )
-

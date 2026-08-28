@@ -3,10 +3,10 @@ const {createMeal}=require("../../api/meals");
 const {localDateKey}=require("../../utils/date");
 const MEAL_TYPES=[{label:"早餐",value:"breakfast"},{label:"午餐",value:"lunch"},{label:"晚餐",value:"dinner"},{label:"加餐",value:"snack"}];
 Page({
-  data:{query:"",items:[],loading:false,searched:false,mealDate:localDateKey(),mealScheduleId:"",presetMealType:"",presetMealName:""},
+  data:{query:"",items:[],loading:false,searched:false,catalogReady:null,mealDate:localDateKey(),mealScheduleId:"",presetMealType:"",presetMealName:""},
   onLoad(query){this.setData({mealDate:query.date||localDateKey(),query:query.q||"",mealScheduleId:query.scheduleId||"",presetMealType:query.mealType||"",presetMealName:decodeURIComponent(query.mealName||"")},()=>{if(this.data.query)this.search();});},
   input(e){this.setData({query:e.detail.value});},
-  async search(){const q=this.data.query.trim();if(!q)return;this.setData({loading:true});try{const r=await request({url:`/api/v1/foods/search?q=${encodeURIComponent(q)}&locale=zh-CN`});this.setData({items:r.items||[],searched:true});}catch(e){wx.showToast({title:"搜索失败",icon:"none"});}finally{this.setData({loading:false});}},
+  async search(){const q=this.data.query.trim();if(!q)return;this.setData({loading:true});try{const r=await request({url:`/api/v1/foods/search?q=${encodeURIComponent(q)}&locale=zh-CN`});this.setData({items:r.items||[],searched:true,catalogReady:r.catalog_ready!==false});}catch(e){wx.showToast({title:"搜索失败",icon:"none"});}finally{this.setData({loading:false});}},
   async record(item,meal){
     wx.showModal({title:`记录到${meal.label}`,content:"100",editable:true,placeholderText:"输入克数",confirmText:"确认记录",success:async(result)=>{
       if(!result.confirm)return;const grams=Number(result.content);if(!Number.isFinite(grams)||grams<=0||grams>5000)return wx.showToast({title:"请输入有效克数",icon:"none"});

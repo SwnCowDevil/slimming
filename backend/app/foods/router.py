@@ -22,7 +22,11 @@ def search_foods(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ) -> FoodSearchResponse:
-    return FoodSearchResponse(items=TkaProvider(session).search(q, locale=locale))
+    provider = TkaProvider(session)
+    return FoodSearchResponse(
+        items=provider.search(q, locale=locale),
+        catalog_ready=provider.is_ready(),
+    )
 
 
 @router.get("/foods/{source_food_id}", response_model=FoodDetail)

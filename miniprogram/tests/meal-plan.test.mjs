@@ -3,7 +3,12 @@ import { createRequire } from "node:module";
 import test from "node:test";
 
 const require = createRequire(import.meta.url);
-const { buildMealSections, buildPregnancyTodayModel } = require("../utils/meal-plan.js");
+const {
+  buildMealSections,
+  buildPregnancyTodayModel,
+  buildTodayMealView,
+  buildRecordTimeline,
+} = require("../utils/meal-plan.js");
 
 test("daily plan groups records by persisted schedule snapshots", () => {
   const sections = buildMealSections(
@@ -33,4 +38,31 @@ test("pregnancy today model does not expose calorie deficit fields", () => {
   assert.equal(model.currentWeightKg, 62);
   assert.equal("dailyKcal" in model, false);
   assert.equal("targetWeightKg" in model, false);
+});
+
+test("today view promotes one upcoming meal and keeps the rest compact", () => {
+  const sections = [
+    { id: "breakfast", time: "08:00", items: [{ id: "food-1" }], kcal: 220 },
+    { id: "lunch", time: "12:00", items: [], kcal: 0 },
+    { id: "dinner", time: "18:30", items: [], kcal: 0 },
+  ];
+
+  const view = buildTodayMealView(sections, 10 * 60);
+
+  assert.equal(view.focusSection.id, "lunch");
+  assert.deepEqual(view.otherSections.map((item) => item.id), ["breakfast", "dinner"]);
+  assert.equal(view.completedCount, 1);
+  assert.equal(view.totalCount, 3);
+});
+
+test("record timeline contains only recorded meals and summarizes the day", () => {
+  const timeline = buildRecordTimeline([
+    { id: "breakfast", title: "早餐", time: "08:00", items: [{ id: "food-1" }], kcal: 220 },
+    { id: "lunch", title: "午餐", time: "12:00", items: [], kcal: 0 },
+    { id: "dinner", title: "晚餐", time: "18:30", items: [{ id: "food-2" }, { id: "food-3" }], kcal: 430 },
+  ]);
+
+  assert.deepEqual(timeline.groups.map((item) => item.id), ["breakfast", "dinner"]);
+  assert.equal(timeline.recordCount, 3);
+  assert.equal(timeline.totalKcal, 650);
 });

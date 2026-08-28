@@ -32,10 +32,10 @@ class FoodDetail(FoodHit):
 
 class FoodSearchResponse(BaseModel):
     items: list[FoodHit]
+    catalog_ready: bool
 
 
 class ImportRequest(BaseModel):
     path: str = Field(min_length=1)
     version: str = Field(min_length=1, max_length=128)
     dry_run: bool = True
-

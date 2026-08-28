@@ -31,4 +31,42 @@ function buildPregnancyTodayModel(pregnancy, plan) {
   };
 }
 
-module.exports = { buildMealSections, buildPregnancyTodayModel };
+function timeToMinutes(value) {
+  const match = /^(\d{2}):(\d{2})$/.exec(value || "");
+  return match ? Number(match[1]) * 60 + Number(match[2]) : Number.MAX_SAFE_INTEGER;
+}
+
+function buildTodayMealView(sections, currentMinutes) {
+  const rows = sections || [];
+  const now = Number.isFinite(currentMinutes)
+    ? currentMinutes
+    : new Date().getHours() * 60 + new Date().getMinutes();
+  const incomplete = rows.filter((section) => !(section.items || []).length);
+  const focusSection =
+    incomplete.find((section) => timeToMinutes(section.time) >= now) ||
+    incomplete[0] ||
+    rows[rows.length - 1] ||
+    null;
+  return {
+    focusSection,
+    otherSections: focusSection ? rows.filter((section) => section.id !== focusSection.id) : [],
+    completedCount: rows.filter((section) => (section.items || []).length > 0).length,
+    totalCount: rows.length,
+  };
+}
+
+function buildRecordTimeline(sections) {
+  const groups = (sections || []).filter((section) => (section.items || []).length > 0);
+  return {
+    groups,
+    recordCount: groups.reduce((sum, section) => sum + section.items.length, 0),
+    totalKcal: Math.round(groups.reduce((sum, section) => sum + Number(section.kcal || 0), 0)),
+  };
+}
+
+module.exports = {
+  buildMealSections,
+  buildPregnancyTodayModel,
+  buildTodayMealView,
+  buildRecordTimeline,
+};
