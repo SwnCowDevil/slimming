@@ -1,0 +1,14 @@
+<view class="page confirm-page">
+  <view class="eyebrow">记录前确认</view>
+  <view class="title">确认食材与份量</view>
+  <view class="subtitle">AI 估算食材需要按实际用量确认，保存后形成本次饮食的营养快照。</view>
+  <view class="meal-block"><view class="label">记录到</view><view class="chips"><view wx:for="{{mealTypes}}" wx:key="value" class="chip {{mealType===item.value?'active':''}}" data-value="{{item.value}}" bindtap="chooseMeal">{{item.label}}</view></view></view>
+  <view class="ingredients">
+    <view wx:for="{{items}}" wx:key="itemId" class="ingredient-row">
+      <view class="ingredient-copy"><text>{{item.name}}</text><small>{{item.sourceLabel}}</small></view>
+      <view class="grams"><input type="digit" value="{{item.grams}}" data-index="{{index}}" bindinput="editGrams"/><text>克</text></view>
+    </view>
+  </view>
+  <view class="estimate-note"><text>营养来源说明</text><view>标记“AI 估算”的食材会保存本次估算值；后续数据库更新不会改写这次记录。</view></view>
+  <button class="submit" disabled="{{submitting}}" bindtap="submit">{{submitting?'正在记录':'确认并记录'}}</button>
+</view>

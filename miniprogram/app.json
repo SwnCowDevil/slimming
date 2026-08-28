@@ -9,6 +9,8 @@
     "pages/family/index",
     "pages/profile/index",
     "pages/recipe-detail/index",
+    "pages/ai-recipes/index",
+    "pages/recipe-confirm/index",
     "pages/food-search/index",
     "pages/photo-recognition/index",
     "pages/ai-coach/index",

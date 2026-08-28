@@ -1,0 +1,1 @@
+{ "navigationBarTitleText": "AI 食谱推荐", "usingComponents": { "recipe-card": "/components/recipe-card/index" } }

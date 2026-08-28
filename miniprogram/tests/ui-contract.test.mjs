@@ -35,3 +35,31 @@ test("fallback recipes open food search with a searchable ingredient keyword", (
   assert.match(detailLogic, /recipe\.searchKeyword\s*\|\|\s*recipe\.title/);
   assert.match(fallbackRecipes, /searchKeyword\s*:\s*["']鸡胸肉["']/);
 });
+
+test("recipe tab keeps its card flow and offers a lightweight AI entry", () => {
+  const markup = read("../pages/recipes/index.wxml");
+
+  assert.match(markup, /告诉我今天想吃什么/);
+  assert.match(markup, /帮我推荐/);
+  assert.match(markup, /recipe-card/);
+});
+
+test("AI recipe page has filters, free text, next batch and adjustment actions", () => {
+  const markup = read("../pages/ai-recipes/index.wxml");
+  for (const required of ["餐次", "烹饪时长", "口味", "已有食材", "换一批", "调整条件"]) {
+    assert.match(markup, new RegExp(required));
+  }
+});
+
+test("mixed or estimated recipes route through ingredient confirmation", () => {
+  const detail = read("../pages/recipe-detail/index.js");
+  assert.match(detail, /nutrition_source/);
+  assert.match(detail, /recipe-confirm/);
+});
+
+test("recipe confirmation displays grams and source labels", () => {
+  const markup = read("../pages/recipe-confirm/index.wxml");
+  assert.match(markup, /确认食材与份量/);
+  assert.match(markup, /克/);
+  assert.match(markup, /AI 估算/);
+});

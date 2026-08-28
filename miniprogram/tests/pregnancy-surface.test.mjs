@@ -36,3 +36,13 @@ test("data-source copy distinguishes imported TKA data from TAP tooling", () => 
   assert.match(source, /TAP/);
   assert.match(source, /不会实时抓取/);
 });
+
+test("AI recipes disclose minimized input, provenance and medical limits", () => {
+  const privacy = read("../pages/privacy/index.wxml");
+  const source = read("../pages/data-sources/index.wxml");
+
+  assert.match(privacy, /DeepSeek/);
+  assert.match(privacy, /孕期阶段/);
+  assert.match(source, /AI 估算/);
+  assert.match(source, /不替代医生建议/);
+});

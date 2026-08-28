@@ -14,5 +14,9 @@
     <view>运行边界</view>
     <text>小程序不会实时抓取 TKA 或 TAP 网页。孕期阶段信息、食谱筛选与安全标签由独立、可版本化且经过审核的规则提供。</text>
   </view>
-  <view class="source-note">页面结果用于日常记录参考，不能替代医生或具备相应资质的专业人员意见。</view>
+  <view class="source source-orange">
+    <view>AI 推荐与营养标识</view>
+    <text>DeepSeek 生成的候选统一标记“AI 推荐”。营养来源分别标记为 TKA、混合数据或 AI 估算；含 AI 估算的食谱必须确认食材与克数后才能记录。</text>
+  </view>
+  <view class="source-note">AI 推荐仅供饮食安排参考，不替代医生建议。出现不适、妊娠并发症或医生有专门要求时，应以医疗专业意见为准。</view>
 </view>

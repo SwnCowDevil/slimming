@@ -2,6 +2,9 @@ const {recipes:inspiration}=require("../../data/recipes");
 const {listRecipes}=require("../../api/recipes");
 const {applyRecipeFilters,normalizeRecipe,searchRecipes}=require("../../utils/recipe-filter");
 
+function decorate(item){return {...item,sourceLabel:item.source_type==="ai"?"AI 推荐":"平台食谱",nutritionLabel:item.nutrition_source==="tka"?"TKA 营养数据":(item.nutrition_source?"含 AI 估算":"")};}
+const defaults=inspiration.map((item,index)=>decorate(normalizeRecipe(item,index,inspiration)));
+
 function filterOptions(active){
   const opts={};
   if(active==="quick")opts.maxMinutes=15;
@@ -11,13 +14,14 @@ function filterOptions(active){
 }
 
 Page({
-  data:{active:"all",query:"",searching:false,recipes:inspiration,visible:inspiration,filters:[{key:"all",label:"全部"},{key:"quick",label:"15分钟快手"},{key:"protein",label:"高蛋白"},{key:"vegetarian",label:"轻素食"}]},
+  data:{active:"all",query:"",searching:false,recipes:defaults,visible:defaults,filters:[{key:"all",label:"全部"},{key:"quick",label:"15分钟快手"},{key:"protein",label:"高蛋白"},{key:"vegetarian",label:"轻素食"}]},
   onShow(){this.load();},
-  async load(){try{const remote=await listRecipes();if(remote.length){const recipes=remote.map((item,index)=>normalizeRecipe(item,index,inspiration));this.setData({recipes},()=>this.refresh());}}catch(error){console.warn("recipes",error);}},
+  async load(){try{const remote=await listRecipes();if(remote.length){const recipes=remote.map((item,index)=>decorate(normalizeRecipe(item,index,inspiration)));this.setData({recipes},()=>this.refresh());}}catch(error){console.warn("recipes",error);}},
   refresh(){const filtered=applyRecipeFilters(this.data.recipes,filterOptions(this.data.active));this.setData({visible:searchRecipes(filtered,this.data.query)});},
   choose(e){this.setData({active:e.currentTarget.dataset.key},()=>this.refresh());},
   open(e){wx.setStorageSync("recipes.selected",e.detail.recipe);wx.navigateTo({url:`/pages/recipe-detail/index?id=${e.detail.recipe.id}`});},
   toggleSearch(){this.setData({searching:!this.data.searching,query:""},()=>this.refresh());},
   inputSearch(e){this.setData({query:e.detail.value},()=>this.refresh());},
-  clearSearch(){this.setData({query:""},()=>this.refresh());}
+  clearSearch(){this.setData({query:""},()=>this.refresh());},
+  openAi(){wx.navigateTo({url:"/pages/ai-recipes/index"});}
 });
