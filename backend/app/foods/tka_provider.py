@@ -2,13 +2,23 @@ import hashlib
 import json
 from datetime import date
 from decimal import Decimal
+from functools import lru_cache
 from pathlib import Path
 
-from sqlalchemy import or_, select
+from sqlalchemy import String, cast, or_, select
 from sqlalchemy.orm import Session
 
 from app.foods.models import Food, FoodAlias
 from app.foods.schemas import FoodDetail, FoodHit, ImportReport
+
+
+LOCAL_ALIASES_PATH = Path(__file__).parent / "data" / "tka_aliases_zh.json"
+
+
+@lru_cache(maxsize=1)
+def load_local_aliases() -> dict[str, list[str]]:
+    payload = json.loads(LOCAL_ALIASES_PATH.read_text(encoding="utf-8"))
+    return payload.get("aliases_zh", {})
 
 
 class TkaProvider:
@@ -24,8 +34,19 @@ class TkaProvider:
         if payload.get("provider") != self.provider_name:
             raise ValueError("数据提供方必须为 tka")
         report = ImportReport()
+        local_aliases = load_local_aliases()
         for record in payload.get("records", []):
-            raw = json.dumps(record, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+            source_food_id = str(record["source_food_id"])
+            aliases = list(
+                dict.fromkeys(
+                    [
+                        *payload.get("aliases_zh", {}).get(source_food_id, []),
+                        *local_aliases.get(source_food_id, []),
+                    ]
+                )
+            )
+            hash_payload = {"record": record, "aliases_zh": aliases} if aliases else record
+            raw = json.dumps(hash_payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
             raw_hash = hashlib.sha256(raw.encode("utf-8")).hexdigest()
             food = self.session.scalar(
                 select(Food).where(
@@ -68,8 +89,8 @@ class TkaProvider:
                 for name, value in values.items():
                     setattr(food, name, value)
                 food.aliases.clear()
+                self.session.flush()
                 report.updated += 1
-            aliases = payload.get("aliases_zh", {}).get(str(record["source_food_id"]), [])
             food.aliases.extend(FoodAlias(locale="zh-CN", name=name) for name in aliases)
         if dry_run:
             self.session.rollback()
@@ -88,6 +109,7 @@ class TkaProvider:
                 or_(
                     Food.name_en.ilike(f"%{term}%"),
                     Food.name_et.ilike(f"%{term}%"),
+                    cast(Food.synonyms, String).ilike(f"%{term}%"),
                     Food.id.in_(alias_food_ids),
                 )
             )

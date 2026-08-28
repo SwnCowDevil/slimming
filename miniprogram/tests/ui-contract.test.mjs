@@ -21,3 +21,17 @@ test("record page is a history timeline instead of another meal-plan page", () =
   assert.equal("pregnancy-meal" in config.usingComponents, false);
   assert.doesNotMatch(markup, /点击时间可修改/);
 });
+
+test("food search decodes route keywords before encoding the API request", () => {
+  const logic = read("../pages/food-search/index.js");
+
+  assert.match(logic, /query\s*:\s*decodeURIComponent\(query\.q\s*\|\|\s*["']{2}\)/);
+});
+
+test("fallback recipes open food search with a searchable ingredient keyword", () => {
+  const detailLogic = read("../pages/recipe-detail/index.js");
+  const fallbackRecipes = read("../data/recipes.js");
+
+  assert.match(detailLogic, /recipe\.searchKeyword\s*\|\|\s*recipe\.title/);
+  assert.match(fallbackRecipes, /searchKeyword\s*:\s*["']鸡胸肉["']/);
+});

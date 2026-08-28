@@ -1,4 +1,5 @@
 from decimal import Decimal
+import json
 from pathlib import Path
 
 import pytest
@@ -43,3 +44,32 @@ def test_chinese_alias_and_english_name_are_searchable(db_session):
 
     assert provider.search("琼脂粉")[0].source_food_id == "8535"
     assert provider.search("agar", locale="en")[0].name == "Agar, powder"
+
+
+def test_official_synonyms_are_searchable(db_session):
+    provider = TkaProvider(db_session)
+    provider.import_dataset(FIXTURE, "fixture-2026-08")
+
+    assert provider.search("Chinese grass", locale="en")[0].source_food_id == "8535"
+
+
+def test_import_updates_aliases_when_only_local_aliases_change(db_session, tmp_path):
+    provider = TkaProvider(db_session)
+    provider.import_dataset(FIXTURE, "fixture-2026-08")
+    payload = json.loads(FIXTURE.read_text(encoding="utf-8"))
+    payload["aliases_zh"]["8535"] = ["琼脂", "寒天"]
+    changed_fixture = tmp_path / "tka_alias_update.json"
+    changed_fixture.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+
+    report = provider.import_dataset(changed_fixture, "fixture-2026-08")
+
+    assert report.updated == 1
+    assert report.unchanged == 0
+    assert provider.search("寒天")[0].source_food_id == "8535"
+
+
+def test_import_merges_reviewed_local_chinese_aliases(db_session):
+    provider = TkaProvider(db_session)
+    provider.import_dataset(FIXTURE, "fixture-2026-08")
+
+    assert provider.search("大菜粉")[0].source_food_id == "8535"
