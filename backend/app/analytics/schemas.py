@@ -1,4 +1,6 @@
 from datetime import date
+from typing import Literal
+
 from pydantic import BaseModel
 
 
@@ -21,9 +23,19 @@ class MacroAchievement(BaseModel):
 
 
 class AnalyticsSummary(BaseModel):
+    product_mode: Literal["legacy_slimming"] = "legacy_slimming"
     period: int
     weight_points: list[WeightPoint]
     calorie_days: list[CalorieDay]
     macro_achievement: MacroAchievement
     insight: str | None
 
+
+class PregnancyAnalyticsSummary(BaseModel):
+    product_mode: Literal["pregnancy"] = "pregnancy"
+    period: int
+    weight_points: list[WeightPoint]
+    recorded_day_count: int
+    food_category_diversity: int
+    facts: list[str]
+    insight: str | None
