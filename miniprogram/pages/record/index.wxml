@@ -1,7 +1,1 @@
-<view class="page record">
-  <record-calendar marks="{{marks}}" bind:datechange="dateChange" bind:viewchange="viewChange" />
-  <view class="quick"><button class="button-light" bindtap="search">搜索食物</button><button class="button-light" bindtap="recent">最近吃过</button><button class="button-light" bindtap="photo">拍照识别</button></view>
-  <view class="date-title">{{selectedDate}} 的饮食</view>
-  <view class="stack"><meal-card wx:for="{{mealGroups}}" wx:key="type" title="{{item.title}}" kcal="{{item.kcal}}" items="{{item.items}}" bind:add="search" /></view>
-  <view class="habit-card card"><view><text>饮水</text><text>{{waterMl}} ml</text></view><view><text>步数</text><text>{{steps}}</text></view></view>
-</view>
+<view class="page record"><record-calendar marks="{{marks}}" bind:datechange="dateChange" bind:viewchange="viewChange" /><view class="quick"><button bindtap="search">搜索食物</button><button bindtap="recent">最近吃过</button><button bindtap="photo">拍照识别</button></view><view class="date-title"><text>{{selectedDate}} 的餐单</text><text>点击时间可修改</text></view><view class="meal-stack"><pregnancy-meal wx:for="{{sections}}" wx:key="id" section="{{item}}" bind:add="addMeal" bind:edittime="editTime" /></view></view>

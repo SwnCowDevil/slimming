@@ -1,1 +1,1 @@
-{ "navigationBarTitleText": "记录", "usingComponents": { "record-calendar": "/components/record-calendar/index", "meal-card": "/components/meal-card/index" } }
+{ "navigationBarTitleText": "记录", "usingComponents": { "record-calendar": "/components/record-calendar/index", "pregnancy-meal": "/components/pregnancy-meal/index" } }
