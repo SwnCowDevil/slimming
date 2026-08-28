@@ -17,3 +17,4 @@ from app.ai_coach import models as ai_models  # noqa: E402,F401
 from app.dietitians import models as dietitian_models  # noqa: E402,F401
 from app.media import models as media_models  # noqa: E402,F401
 from app.pregnancies import models as pregnancy_models  # noqa: E402,F401
+from app.family import models as family_models  # noqa: E402,F401

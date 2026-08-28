@@ -19,6 +19,7 @@ from app.pregnancies.router import (
     schedule_router as meal_schedules_router,
     wellbeing_router,
 )
+from app.family.router import router as family_router
 
 
 def create_app(
@@ -46,6 +47,7 @@ def create_app(
     app.include_router(pregnancies_router)
     app.include_router(meal_schedules_router)
     app.include_router(wellbeing_router)
+    app.include_router(family_router)
 
     @app.get("/health")
     def health() -> dict[str, str]:

@@ -5,6 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.foods.models import Food
+from app.family.service import authorize_subject
 from app.meals.models import MealEntry
 from app.meals.schemas import MealEntryCreate
 from app.pregnancies.models import MealSchedule
@@ -27,8 +28,14 @@ def create_meal_entry(
     commit: bool = True,
 ) -> MealEntry:
     subject_user_id = command.subject_user_id or user_id
+    authorized_episode = None
     if subject_user_id != user_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="尚未获得为该用户记录的权限")
+        authorized_episode = authorize_subject(
+            session,
+            actor_user_id=user_id,
+            subject_user_id=subject_user_id,
+            scope="meal_entry:write_for_owner",
+        )
     existing = session.scalar(
         select(MealEntry).where(
             MealEntry.user_id == subject_user_id,
@@ -40,7 +47,7 @@ def create_meal_entry(
     food = session.scalar(select(Food).where(Food.provider == "tka", Food.source_food_id == command.source_food_id))
     if food is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="未找到食物")
-    episode = get_active_episode(session, subject_user_id)
+    episode = authorized_episode or get_active_episode(session, subject_user_id)
     schedule = None
     if command.meal_schedule_id is not None:
         if episode is None:
