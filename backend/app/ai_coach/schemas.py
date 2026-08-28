@@ -9,10 +9,11 @@ class AiContext(BaseModel):
     pregnancy: bool = False
     eating_disorder_risk: bool = False
     serious_symptoms: bool = False
+    medication_or_disease: bool = False
 
 
 class SafetyResult(BaseModel):
-    action: Literal["allow", "refer_professional"]
+    action: Literal["allow", "allow_limited", "refer_professional", "emergency_guidance"]
     reason: str | None = None
 
 
@@ -36,4 +37,12 @@ class AiDraftRead(BaseModel):
     model_name: str
     prompt_version: str
     safety_action: str
+    policy_version: str
+    response_text: str | None
     meal_entry_id: str | None
+
+
+class PregnancyAiRequest(BaseModel):
+    context: AiContext = Field(default_factory=lambda: AiContext(pregnancy=True))
+    period: Literal[7, 30, 90] = 7
+    current_recipe_id: str | None = None

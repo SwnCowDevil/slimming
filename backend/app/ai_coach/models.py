@@ -19,6 +19,8 @@ class AiDraft(Base):
     model_name: Mapped[str] = mapped_column(String(128), default="rules-v1")
     prompt_version: Mapped[str] = mapped_column(String(64), default="meal-candidate-v1")
     safety_action: Mapped[str] = mapped_column(String(32), default="allow")
+    policy_version: Mapped[str] = mapped_column(String(64), default="legacy-safety-v1")
+    response_text: Mapped[str | None] = mapped_column(String(1000), nullable=True)
     meal_entry_id: Mapped[str | None] = mapped_column(ForeignKey("meal_entries.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
