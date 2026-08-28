@@ -41,7 +41,10 @@ def _candidate(ingredient: str = "鸡胸肉", steps: list[str] | None = None) ->
     )
 
 
-@pytest.mark.parametrize("ingredient", ["料理酒", "生鱼片", "鲨鱼", "未巴氏杀菌鲜奶"])
+@pytest.mark.parametrize(
+    "ingredient",
+    ["料理酒", "红酒", "啤酒", "生鱼片", "半熟牛排", "鲨鱼", "未巴氏杀菌鲜奶"],
+)
 def test_pregnancy_hard_risk_discards_whole_candidate(ingredient):
     result = validate_candidate(_candidate(ingredient), allergens=set(), avoidances=set())
 
@@ -70,6 +73,44 @@ def test_user_allergen_discards_candidate():
 
     assert result.allowed is False
     assert result.reason == "allergen:peanut"
+
+
+def test_user_disliked_food_discards_candidate():
+    result = validate_candidate(_candidate("香菜"), allergens=set(), avoidances={"香菜"})
+
+    assert result.allowed is False
+    assert result.reason == "avoidance:香菜"
+
+
+def test_unsafe_ingredient_is_rejected_even_when_step_claims_it_was_cooked():
+    result = validate_candidate(
+        _candidate("红酒", ["长时间炖煮并声称酒精已经挥发。"]),
+        allergens=set(),
+        avoidances=set(),
+    )
+
+    assert result.allowed is False
+    assert result.reason == "pregnancy_risk:alcohol"
+
+
+def test_each_risky_ingredient_needs_its_own_safe_cooking_instruction():
+    candidate = _candidate("鸡肉", ["鸡肉持续加热至中心完全熟透。", "鸡蛋蛋黄保持流心。"])
+    candidate.ingredients.append(candidate.ingredients[0].model_copy(update={"name_zh": "鸡蛋"}))
+
+    result = validate_candidate(candidate, allergens=set(), avoidances=set())
+
+    assert result.allowed is False
+    assert result.reason == "pregnancy_risk:undercooked_instruction"
+
+
+def test_raw_oyster_instruction_is_rejected():
+    result = validate_candidate(
+        _candidate("生蚝", ["生蚝开壳直接食用。"]),
+        allergens=set(),
+        avoidances=set(),
+    )
+
+    assert result.allowed is False
 
 
 def test_fingerprint_ignores_ingredient_order_and_whitespace():

@@ -38,6 +38,8 @@ class MealEntryRead(BaseModel):
     fiber_g: Decimal
     provider: str
     dataset_version: str
+    nutrition_source: str
+    source_recipe_id: str | None
 
 
 class MealList(BaseModel):

@@ -8,7 +8,7 @@ from app.ai_recipes.schemas import ProviderGenerationResult, ProviderUsage, Reci
 from app.ai_recipes.service import purge_expired_sessions
 from app.auth.models import User
 from app.db.session import get_session
-from app.recipes.models import Recipe
+from app.recipes.models import Recipe, RecipeItem
 
 
 def _candidate(title: str) -> RecipeCandidate:
@@ -68,6 +68,51 @@ class FakeProvider:
 class UnavailableProvider:
     def generate_recipes(self, request):
         raise AiProviderUnavailable("test outage")
+
+
+class OnceUnavailableProvider(FakeProvider):
+    def __init__(self) -> None:
+        super().__init__([["番茄鸡丁", "冬瓜鸡肉汤", "西兰花鸡肉饭"]])
+        self.calls = 0
+
+    def generate_recipes(self, request):
+        self.calls += 1
+        if self.calls == 1:
+            raise AiProviderUnavailable("temporary outage")
+        return super().generate_recipes(request)
+
+
+class InconsistentThenValidProvider:
+    def __init__(self) -> None:
+        self.calls = 0
+
+    def generate_recipes(self, request):
+        self.calls += 1
+        candidates = [_candidate(f"候选{self.calls}-{index}") for index in range(3)]
+        if self.calls == 1:
+            for candidate in candidates:
+                candidate.nutrition_per_serving.energy_kcal = 1
+        return ProviderGenerationResult(
+            candidates=candidates,
+            model="fake-deepseek",
+            prompt_version="test-prompt-v1",
+            latency_ms=5,
+            usage=ProviderUsage(input_tokens=50, output_tokens=50),
+        )
+
+
+class InvalidResponseThenValidProvider(FakeProvider):
+    def __init__(self) -> None:
+        super().__init__([["番茄鸡丁", "冬瓜鸡肉汤", "西兰花鸡肉饭"]])
+        self.calls = 0
+
+    def generate_recipes(self, request):
+        from app.ai_recipes.provider import AiProviderResponseError
+
+        self.calls += 1
+        if self.calls == 1:
+            raise AiProviderResponseError("invalid JSON")
+        return super().generate_recipes(request)
 
 
 def _create_pregnancy(client, headers):
@@ -190,6 +235,156 @@ def test_provider_outage_returns_platform_fallback(client, auth_headers):
     assert response.status_code == 201
     assert response.json()["mode"] == "fallback"
     assert response.json()["candidates"][0]["id"] == "outage-fallback"
+
+
+def test_retryable_provider_outage_is_retried(client, auth_headers, settings):
+    _create_pregnancy(client, auth_headers)
+    settings.ai_max_retries = 1
+    provider = OnceUnavailableProvider()
+    client.app.state.ai_recipe_provider = provider
+
+    response = _recommend(client, auth_headers, "retryable-outage")
+
+    assert response.status_code == 201
+    assert response.json()["mode"] == "ai"
+    assert provider.calls == 2
+
+
+def test_invalid_provider_json_is_retried(client, auth_headers, settings):
+    _create_pregnancy(client, auth_headers)
+    settings.ai_max_retries = 1
+    provider = InvalidResponseThenValidProvider()
+    client.app.state.ai_recipe_provider = provider
+
+    response = _recommend(client, auth_headers, "invalid-json-retry")
+
+    assert response.status_code == 201
+    assert response.json()["mode"] == "ai"
+    assert provider.calls == 2
+
+
+def test_request_dislikes_and_hard_filters_are_enforced(client, auth_headers, settings):
+    _create_pregnancy(client, auth_headers)
+    settings.ai_max_retries = 1
+    provider = FakeProvider(
+        [
+            ["香菜鸡丁", "超时鸡肉汤", "早餐鸡蛋"],
+            ["冬瓜鸡肉汤", "西兰花鸡肉饭", "菌菇鸡肉煲"],
+        ]
+    )
+    disliked = _candidate("香菜鸡丁")
+    disliked.ingredients[0].name_zh = "香菜"
+    too_slow = _candidate("超时鸡肉汤")
+    too_slow.minutes = 60
+    wrong_meal = _candidate("早餐鸡蛋")
+    wrong_meal.meal_type = "breakfast"
+    provider.generate_recipes = lambda request, calls=iter([
+        ProviderGenerationResult(
+            candidates=[disliked, too_slow, wrong_meal], model="fake", prompt_version="v1", latency_ms=1
+        ),
+        ProviderGenerationResult(
+            candidates=[_candidate("冬瓜鸡肉汤"), _candidate("西兰花鸡肉饭"), _candidate("菌菇鸡肉煲")],
+            model="fake", prompt_version="v1", latency_ms=1
+        ),
+    ]): next(calls)
+    client.app.state.ai_recipe_provider = provider
+
+    response = client.post(
+        "/api/v1/ai/recipe-recommendations",
+        headers={**auth_headers, "Idempotency-Key": "hard-filter"},
+        json={
+            "filters": {
+                "meal_type": "dinner",
+                "max_minutes": 30,
+                "disliked_ingredients": ["香菜"],
+            },
+            "query": "清淡晚餐",
+        },
+    )
+
+    assert response.status_code == 201
+    assert {item["title"] for item in response.json()["candidates"]} == {
+        "冬瓜鸡肉汤", "西兰花鸡肉饭", "菌菇鸡肉煲"
+    }
+
+
+def test_inconsistent_nutrition_candidate_is_rejected_and_supplemented(client, auth_headers, settings):
+    _create_pregnancy(client, auth_headers)
+    settings.ai_max_retries = 1
+    provider = InconsistentThenValidProvider()
+    client.app.state.ai_recipe_provider = provider
+
+    response = _recommend(client, auth_headers, "nutrition-retry")
+
+    assert response.status_code == 201
+    assert len(response.json()["candidates"]) == 3
+    assert provider.calls == 2
+
+
+def test_generation_excludes_existing_platform_recipe(client, auth_headers):
+    _create_pregnancy(client, auth_headers)
+    session_iterator = client.app.dependency_overrides[get_session]()
+    session = next(session_iterator)
+    recipe = Recipe(id="existing-platform", title="番茄鸡丁", visibility="platform")
+    recipe.items.append(RecipeItem(ingredient_name_zh="番茄鸡丁鸡胸肉", grams=120, position=0))
+    session.add(recipe)
+    session.commit()
+    session.close()
+    provider = FakeProvider(
+        [
+            ["番茄鸡丁", "冬瓜鸡肉汤", "西兰花鸡肉饭"],
+            ["菌菇鸡肉煲"],
+        ]
+    )
+    client.app.state.ai_recipe_provider = provider
+
+    response = _recommend(client, auth_headers, "catalog-dedupe")
+
+    assert response.status_code == 201
+    assert {item["title"] for item in response.json()["candidates"]} == {
+        "冬瓜鸡肉汤",
+        "西兰花鸡肉饭",
+        "菌菇鸡肉煲",
+    }
+    assert provider.requests[0].excluded_fingerprints
+
+
+def test_stale_incomplete_idempotency_reservation_can_recover(client, auth_headers):
+    _create_pregnancy(client, auth_headers)
+    session_iterator = client.app.dependency_overrides[get_session]()
+    session = next(session_iterator)
+    user = session.scalar(select(User))
+    stale = AiRecommendationSession(
+        user_id=user.id,
+        filters={},
+        query_text="",
+        displayed_fingerprints=[],
+        candidates=[],
+        expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+    )
+    session.add(stale)
+    session.flush()
+    session.add(
+        AiRecipeRequestEvent(
+            session_id=stale.id,
+            user_id=user.id,
+            request_kind="initial",
+            request_ip_hash="stale-ip",
+            idempotency_key="stale-key",
+            response_payload={},
+            created_at=datetime.now(timezone.utc) - timedelta(minutes=5),
+        )
+    )
+    session.commit()
+    session.close()
+    client.app.state.ai_recipe_provider = FakeProvider(
+        [["番茄鸡丁", "冬瓜鸡肉汤", "西兰花鸡肉饭"]]
+    )
+
+    response = _recommend(client, auth_headers, "stale-key")
+
+    assert response.status_code == 201
+    assert response.json()["mode"] == "ai"
 
 
 def test_expired_session_cannot_request_next_batch(client, auth_headers):

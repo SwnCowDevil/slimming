@@ -155,6 +155,9 @@ def test_confirmed_estimated_recipe_records_immutable_snapshot(client, auth_head
     assert entry.nutrition_source == "ai_estimated"
     assert float(entry.energy_kcal) == 240
     session.close()
+    history = client.get("/api/v1/meals?date=2026-08-28", headers=auth_headers).json()["items"]
+    assert history[0]["nutrition_source"] == "ai_estimated"
+    assert history[0]["source_recipe_id"] == recipe_id
 
 
 def test_unfavorite_private_recipe_archives_it_and_preserves_meal_history(client, auth_headers):
@@ -181,3 +184,62 @@ def test_unfavorite_private_recipe_archives_it_and_preserves_meal_history(client
     assert session.get(Recipe, recipe_id).content_status == "archived"
     assert session.get(MealEntry, recorded.json()["meal_entry_ids"][0]) is not None
     session.close()
+
+
+def test_changed_unmatched_confirmation_does_not_reuse_original_tka_food(client, auth_headers):
+    fixture = Path(__file__).parents[1] / "foods" / "fixtures" / "tka_sample.json"
+    client.post(
+        "/api/v1/admin/foods/import",
+        headers=auth_headers,
+        json={"path": str(fixture), "version": "fixture-2026-08", "dry_run": False},
+    )
+    user_id = _current_user_id(client)
+    session = _database_session(client)
+    recipe = Recipe(
+        id="mixed-change-name",
+        title="可替换食材",
+        source_type="ai",
+        visibility="private",
+        owner_user_id=user_id,
+        nutrition_source="mixed",
+        prompt_version="test-v1",
+    )
+    item = RecipeItem(
+        source_food_id="8535",
+        ingredient_name_zh="测试食物",
+        grams=100,
+        nutrition_source="tka",
+        estimated_energy_kcal_per_100g=120,
+        estimated_protein_g_per_100g=10,
+        estimated_fat_g_per_100g=4,
+        estimated_carbohydrate_g_per_100g=12,
+        estimated_fiber_g_per_100g=2,
+    )
+    recipe.items.append(item)
+    session.add(recipe)
+    session.commit()
+    recipe_id = recipe.id
+    item_id = item.id
+    session.close()
+
+    response = client.post(
+        f"/api/v1/recipes/{recipe_id}/record",
+        headers={**auth_headers, "Idempotency-Key": "changed-unmatched"},
+        json={
+            "meal_date": "2026-08-28",
+            "meal_type": "dinner",
+            "confirmed_items": [{
+                "item_id": item_id,
+                "ingredient_name_zh": "自定义混合食材",
+                "grams": 100,
+            }],
+        },
+    )
+
+    assert response.status_code == 200
+    check = _database_session(client)
+    entry = check.get(MealEntry, response.json()["meal_entry_ids"][0])
+    assert entry.food_id is None
+    assert entry.source_food_id.startswith("ai:")
+    assert entry.food_name == "自定义混合食材"
+    check.close()

@@ -21,7 +21,9 @@ function buildRecommendationPayload(state = {}) {
 }
 
 function normalizeCandidate(item = {}) {
-  const kcal = Number(item.nutrition_per_serving?.energy_kcal ?? item.energy_kcal);
+  const nutrition = item.nutrition_per_serving || {};
+  const rawKcal = nutrition.energy_kcal !== undefined ? nutrition.energy_kcal : item.energy_kcal;
+  const kcal = Number(rawKcal);
   const id = item.candidate_id || item.id;
   const sourceType = item.source_type || (item.candidate_id ? "ai" : "platform");
   const nutritionSource = item.nutrition_source || "ai_estimated";
@@ -32,6 +34,8 @@ function normalizeCandidate(item = {}) {
     sourceType,
     sourceLabel: sourceType === "ai" ? "AI 推荐" : "平台食谱",
     nutritionLabel: nutritionSource === "tka" ? "TKA 营养数据" : "含 AI 估算",
+    image: item.image || item.image_url || "",
+    subtitle: item.subtitle || item.safety_summary || item.summary || "食材信息已复核",
     kcal: Number.isFinite(kcal) ? Math.round(kcal) : null,
     kcalLabel: Number.isFinite(kcal) ? `${Math.round(kcal)} kcal` : "营养待确认",
     ingredients: Array.isArray(item.ingredients) ? item.ingredients : (item.items || []),

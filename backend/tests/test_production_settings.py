@@ -40,6 +40,7 @@ def test_production_rejects_enabled_ai_recipes_without_provider_key():
             wechat_app_id="wx-production",
             wechat_app_secret="wechat-secret",
             admin_import_key="i" * 24,
+            enable_dev_auth=False,
             ai_recipe_enabled=True,
             ai_api_key="",
         )
@@ -57,3 +58,17 @@ def test_production_allows_ai_recipes_to_remain_disabled_without_key():
         ai_api_key="",
     )
     assert settings.ai_recipe_enabled is False
+
+
+def test_production_rejects_lookalike_deepseek_hostname():
+    with pytest.raises(ValidationError):
+        Settings(
+            environment="production",
+            jwt_secret="j" * 32,
+            wechat_app_id="wx-production",
+            wechat_app_secret="wechat-secret",
+            admin_import_key="i" * 24,
+            ai_recipe_enabled=True,
+            ai_api_key="provider-key",
+            ai_base_url="https://api.deepseek.com.evil.example",
+        )

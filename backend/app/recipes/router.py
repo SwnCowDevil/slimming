@@ -32,7 +32,6 @@ admin_router = APIRouter(prefix="/api/v1/admin/recipes", tags=["recipe-admin"])
 def import_platform_recipes(
     body: ImportRequest,
     admin_import_key: str = Header(default="", alias="X-Admin-Import-Key"),
-    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
     settings: Settings = Depends(get_settings),
 ) -> ImportReport:
@@ -146,7 +145,11 @@ def record_recipe(
                 confirmation.ingredient_name_zh if confirmation is not None else item.ingredient_name_zh
             )
             matched_food = tka.match_exact(ingredient_name) if confirmation is not None else None
-            source_food_id = matched_food.source_food_id if matched_food is not None else item.source_food_id
+            source_food_id = (
+                matched_food.source_food_id
+                if confirmation is not None and matched_food is not None
+                else (None if confirmation is not None else item.source_food_id)
+            )
             if source_food_id is not None:
                 entry = create_meal_entry(
                     session,

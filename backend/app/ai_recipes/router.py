@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Header, Request, Response, status
 from sqlalchemy.orm import Session
 
-from app.ai_recipes.provider import AiProviderConfigurationError, AiRecipeProvider, get_ai_recipe_provider
+from app.ai_recipes.provider import AiRecipeProvider
 from app.ai_recipes.schemas import RecommendationBatch, RecommendationCreateRequest
 from app.ai_recipes.service import create_recommendation_session, next_recommendation_batch, save_candidate
 from app.auth.models import User
@@ -16,15 +16,7 @@ candidate_router = APIRouter(prefix="/api/v1/ai/recipe-candidates", tags=["ai-re
 
 
 def _provider(request: Request, settings: Settings) -> AiRecipeProvider | None:
-    injected = getattr(request.app.state, "ai_recipe_provider", None)
-    if injected is not None:
-        return injected
-    if not settings.ai_recipe_enabled:
-        return None
-    try:
-        return get_ai_recipe_provider(settings)
-    except AiProviderConfigurationError:
-        return None
+    return getattr(request.app.state, "ai_recipe_provider", None)
 
 
 @router.post("", response_model=RecommendationBatch, status_code=status.HTTP_201_CREATED)

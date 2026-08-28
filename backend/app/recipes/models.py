@@ -42,6 +42,7 @@ class Recipe(Base):
     nutrition_source: Mapped[str] = mapped_column(String(20), default="tka", index=True)
     nutrition_confidence: Mapped[str] = mapped_column(String(20), default="high", index=True)
     content_fingerprint: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    import_fingerprint: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     items: Mapped[list["RecipeItem"]] = relationship(
         back_populates="recipe", cascade="all, delete-orphan", order_by="RecipeItem.position"
     )

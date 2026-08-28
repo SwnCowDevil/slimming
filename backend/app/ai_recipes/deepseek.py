@@ -87,3 +87,6 @@ class DeepSeekRecipeProvider:
                 output_tokens=usage_payload.get("completion_tokens"),
             ),
         )
+
+    def close(self) -> None:
+        self.client.close()

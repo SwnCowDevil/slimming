@@ -34,6 +34,7 @@ def test_platform_import_is_idempotent_and_preserves_steps(db_session):
     recipe = next(item for item in importer.list_imported() if item.title == "番茄炒蛋")
     assert recipe.steps[0].startswith("番茄")
     assert recipe.items
+    assert float(recipe.items[0].grams) == 150
 
 
 def test_platform_import_endpoint_requires_admin_key(client, auth_headers, settings):
@@ -45,7 +46,11 @@ def test_platform_import_endpoint_requires_admin_key(client, auth_headers, setti
         headers={"Authorization": auth_headers["Authorization"]},
         json=body,
     )
-    allowed = client.post("/api/v1/admin/recipes/import", headers=auth_headers, json=body)
+    allowed = client.post(
+        "/api/v1/admin/recipes/import",
+        headers={"X-Admin-Import-Key": auth_headers["X-Admin-Import-Key"]},
+        json=body,
+    )
 
     assert forbidden.status_code == 403
     assert allowed.status_code == 200

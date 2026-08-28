@@ -1,32 +1,44 @@
 import hashlib
 import hmac
+import time
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
-from uuid import uuid4
+from uuid import NAMESPACE_URL, uuid4, uuid5
 
 from fastapi import HTTPException, status
 from sqlalchemy import delete, func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session, selectinload
 
 from app.ai_recipes.models import AiRecommendationSession, AiRecipeRequestEvent
 from app.ai_recipes.nutrition import enrich_candidate_nutrition
-from app.ai_recipes.provider import AiProviderError, AiRecipeProvider
+from app.ai_recipes.provider import (
+    AiProviderError,
+    AiProviderResponseError,
+    AiProviderUnavailable,
+    AiRecipeProvider,
+)
 from app.ai_recipes.schemas import (
     RecommendationBatch,
     RecommendationCreateRequest,
     RecipeCandidate,
     RecipeGenerationRequest,
 )
-from app.ai_recipes.validation import SAFETY_RULE_VERSION, validate_candidate
+from app.ai_recipes.validation import (
+    SAFETY_RULE_VERSION,
+    recipe_identity_fingerprint,
+    validate_candidate,
+)
 from app.auth.models import User
 from app.core.config import Settings
 from app.pregnancies.service import derive_gestation, require_active_episode
 from app.recipes.models import Recipe, RecipeFavorite, RecipeItem
 from app.recipes.schemas import RecipeRead
-from app.recipes.service import list_visible_recipes
+from app.recipes.service import list_visible_recipes, visible_recipe_clause
 
 
 AI_NOTICE = "AI 推荐仅供饮食安排参考，不替代医生建议。"
+IDEMPOTENCY_IN_PROGRESS_SECONDS = 120
 
 
 def utcnow() -> datetime:
@@ -52,9 +64,45 @@ def _existing_response(session: Session, user_id: str, idempotency_key: str) -> 
             AiRecipeRequestEvent.idempotency_key == idempotency_key,
         )
     )
-    if event is None or not event.response_payload:
+    if event is None:
         return None
-    return RecommendationBatch.model_validate(event.response_payload)
+    if event.response_payload:
+        return RecommendationBatch.model_validate(event.response_payload)
+    age = utcnow() - _aware(event.created_at)
+    if age.total_seconds() < IDEMPOTENCY_IN_PROGRESS_SECONDS:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="相同推荐请求正在处理中，请稍后重试",
+        )
+    if event.request_kind == "initial":
+        stale_session = session.get(AiRecommendationSession, event.session_id)
+        if stale_session is not None:
+            session.delete(stale_session)
+        else:
+            session.delete(event)
+    else:
+        session.delete(event)
+    session.commit()
+    return None
+
+
+def _commit_reservation(
+    session: Session,
+    user_id: str,
+    idempotency_key: str,
+) -> RecommendationBatch | None:
+    try:
+        session.commit()
+        return None
+    except IntegrityError:
+        session.rollback()
+        existing = _existing_response(session, user_id, idempotency_key)
+        if existing is not None:
+            return existing
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="相同推荐请求正在处理中，请稍后重试",
+        )
 
 
 def _enforce_rate_limit(session: Session, user_id: str, ip_hash: str, settings: Settings) -> None:
@@ -92,11 +140,55 @@ def _generation_request(
     return RecipeGenerationRequest(
         pregnancy_stage=_stage_for_week(gestation.week),
         allergens=list(preferences.allergens or []),
-        avoidances=list(dict.fromkeys([*(preferences.avoidances or []), *(preferences.disliked_foods or [])])),
+        avoidances=list(
+            dict.fromkeys(
+                [
+                    *body.filters.disliked_ingredients,
+                    *(preferences.avoidances or []),
+                    *(preferences.disliked_foods or []),
+                ]
+            )
+        )[:20],
         filters=body.filters,
         query=body.query,
         excluded_fingerprints=excluded_fingerprints,
     )
+
+
+def _safe_request_summary(recommendation_session: AiRecommendationSession) -> str:
+    filters = recommendation_session.filters or {}
+    parts = []
+    if filters.get("meal_type"):
+        parts.append(f"餐次:{filters['meal_type']}")
+    if filters.get("max_minutes"):
+        parts.append(f"时长:{filters['max_minutes']}分钟")
+    if filters.get("flavors"):
+        parts.append("口味:" + ",".join(filters["flavors"][:4]))
+    if filters.get("recipe_types"):
+        parts.append("类型:" + ",".join(filters["recipe_types"][:4]))
+    return ";".join(parts)[:300] or "AI结构化推荐"
+
+
+def _catalog_fingerprints(session: Session, user_id: str) -> list[str]:
+    recipes = session.scalars(
+        select(Recipe)
+        .where(visible_recipe_clause(user_id))
+        .options(selectinload(Recipe.items))
+    ).all()
+    return sorted(
+        {
+            recipe_identity_fingerprint(
+                recipe.title,
+                [(item.ingredient_name_zh, float(item.grams)) for item in recipe.items],
+            )
+            for recipe in recipes
+            if recipe.items
+        }
+    )[:100]
+
+
+def _bounded_fingerprints(*groups: list[str]) -> list[str]:
+    return list(dict.fromkeys(item for group in groups for item in group))[:100]
 
 
 def _generate_candidates(
@@ -110,16 +202,38 @@ def _generate_candidates(
     rejected_count = 0
     provider_calls = 0
     last_result = None
-    for _attempt in range(settings.ai_max_retries + 1):
-        result = provider.generate_recipes(request_body.model_copy(update={"excluded_fingerprints": sorted(excluded)}))
+    for attempt in range(settings.ai_max_retries + 1):
         provider_calls += 1
+        try:
+            result = provider.generate_recipes(
+                request_body.model_copy(update={"excluded_fingerprints": sorted(excluded)})
+            )
+        except (AiProviderUnavailable, AiProviderResponseError):
+            if attempt >= settings.ai_max_retries:
+                raise
+            if settings.environment != "test":
+                time.sleep(min(0.2 * (2**attempt), 1.0))
+            continue
         last_result = result
         for candidate in result.candidates:
+            if request_body.filters.meal_type and candidate.meal_type != request_body.filters.meal_type:
+                rejected_count += 1
+                continue
+            if request_body.filters.max_minutes and candidate.minutes > request_body.filters.max_minutes:
+                rejected_count += 1
+                continue
+            if request_body.filters.recipe_types and not set(request_body.filters.recipe_types).intersection(candidate.tags):
+                rejected_count += 1
+                continue
             validation = validate_candidate(candidate, set(request_body.allergens), set(request_body.avoidances))
             if not validation.allowed or validation.normalized_candidate is None:
                 rejected_count += 1
                 continue
-            enriched = enrich_candidate_nutrition(session, validation.normalized_candidate)
+            try:
+                enriched = enrich_candidate_nutrition(session, validation.normalized_candidate)
+            except ValueError:
+                rejected_count += 1
+                continue
             fingerprint = enriched.content_fingerprint
             if fingerprint is None or fingerprint in excluded:
                 rejected_count += 1
@@ -192,7 +306,9 @@ def create_recommendation_session(
         response_payload={},
     )
     session.add(event)
-    session.commit()
+    raced_response = _commit_reservation(session, user.id, idempotency_key)
+    if raced_response is not None:
+        return raced_response
 
     if provider is None:
         batch = RecommendationBatch(
@@ -204,7 +320,7 @@ def create_recommendation_session(
         )
         return _finish_event(session, event, batch, {}, "provider_disabled")
 
-    request_body = _generation_request(session, user, body, [])
+    request_body = _generation_request(session, user, body, _catalog_fingerprints(session, user.id))
     try:
         candidates, metadata = _generate_candidates(session, provider, request_body, settings)
     except AiProviderError:
@@ -261,7 +377,9 @@ def next_recommendation_batch(
         response_payload={},
     )
     session.add(event)
-    session.commit()
+    raced_response = _commit_reservation(session, user.id, idempotency_key)
+    if raced_response is not None:
+        return raced_response
     body = RecommendationCreateRequest(
         filters=recommendation_session.filters,
         query=recommendation_session.query_text,
@@ -279,7 +397,10 @@ def next_recommendation_batch(
         session,
         user,
         body,
-        list(recommendation_session.displayed_fingerprints),
+        _bounded_fingerprints(
+            list(recommendation_session.displayed_fingerprints),
+            _catalog_fingerprints(session, user.id),
+        ),
     )
     try:
         candidates, metadata = _generate_candidates(session, provider, request_body, settings)
@@ -392,6 +513,7 @@ def save_candidate(session: Session, user_id: str, candidate_id: str) -> Recipe:
     )
     nutrition = candidate.nutrition_per_serving
     recipe = Recipe(
+        id=str(uuid5(NAMESPACE_URL, f"slimming:private-recipe:{user_id}:{candidate.content_fingerprint}")),
         title=candidate.title,
         description=candidate.summary,
         steps=candidate.steps,
@@ -400,7 +522,7 @@ def save_candidate(session: Session, user_id: str, candidate_id: str) -> Recipe:
         source_type="ai",
         visibility="private",
         owner_user_id=user_id,
-        original_query=recommendation_session.query_text[:300],
+        original_query=_safe_request_summary(recommendation_session),
         model_name=event.provider_model if event is not None else None,
         prompt_version=event.prompt_version if event is not None else None,
         safety_rule_version=SAFETY_RULE_VERSION,
@@ -421,8 +543,8 @@ def save_candidate(session: Session, user_id: str, candidate_id: str) -> Recipe:
             RecipeItem(
                 source_food_id=ingredient.source_food_id,
                 ingredient_name_zh=ingredient.name_zh,
-                original_measure=f"{ingredient.quantity:g}{ingredient.unit}",
-                grams=Decimal(str(ingredient.grams)),
+                original_measure=f"每份 {ingredient.grams / candidate.servings:g}克",
+                grams=Decimal(str(ingredient.grams)) / Decimal(candidate.servings),
                 position=position,
                 nutrition_source=ingredient.nutrition_source,
                 estimated_energy_kcal_per_100g=Decimal(str(ingredient.energy_kcal_per_100g)),
@@ -437,9 +559,19 @@ def save_candidate(session: Session, user_id: str, candidate_id: str) -> Recipe:
         session.add(recipe)
         session.commit()
         session.refresh(recipe)
-    except Exception:
+    except IntegrityError:
         session.rollback()
-        raise
+        existing = session.scalar(
+            select(Recipe).where(
+                Recipe.owner_user_id == user_id,
+                Recipe.content_fingerprint == candidate.content_fingerprint,
+            )
+        )
+        if existing is None:
+            raise
+        existing.is_favorite = True
+        existing.was_created = False
+        return existing
     recipe.is_favorite = True
     recipe.was_created = True
     return recipe

@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 
 from app.auth.router import router as auth_router
@@ -22,6 +24,7 @@ from app.pregnancies.router import (
 from app.family.router import router as family_router
 from app.meal_plans.router import router as meal_plans_router
 from app.ai_recipes.router import candidate_router as ai_recipe_candidates_router, router as ai_recipes_router
+from app.ai_recipes.provider import AiProviderConfigurationError, get_ai_recipe_provider
 
 
 def create_app(
@@ -29,8 +32,23 @@ def create_app(
     wechat_gateway: WechatGateway | None = None,
 ) -> FastAPI:
     resolved_settings = settings or get_settings()
-    app = FastAPI(title="Slimming API", version="0.1.0")
+
+    @asynccontextmanager
+    async def lifespan(application: FastAPI):
+        yield
+        provider = application.state.ai_recipe_provider
+        close = getattr(provider, "close", None)
+        if callable(close):
+            close()
+
+    app = FastAPI(title="Slimming API", version="0.1.0", lifespan=lifespan)
     app.state.settings = resolved_settings
+    app.state.ai_recipe_provider = None
+    if resolved_settings.ai_recipe_enabled:
+        try:
+            app.state.ai_recipe_provider = get_ai_recipe_provider(resolved_settings)
+        except AiProviderConfigurationError:
+            app.state.ai_recipe_provider = None
     app.state.wechat_gateway = wechat_gateway or HttpWechatGateway(
         resolved_settings.wechat_app_id,
         resolved_settings.wechat_app_secret,

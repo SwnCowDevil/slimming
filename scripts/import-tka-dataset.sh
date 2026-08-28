@@ -18,9 +18,7 @@ cp "$slim_dataset" "$slim_import_file"
 slim_admin_key=${SLIMMING_ADMIN_IMPORT_KEY:-}
 if test -z "$slim_admin_key" && test -f "$BACKEND_DIR/.env"; then slim_admin_key=$(sed -n 's/^SLIMMING_ADMIN_IMPORT_KEY=//p' "$BACKEND_DIR/.env" | tail -n 1); fi
 test -n "$slim_admin_key" || { echo "缺少 SLIMMING_ADMIN_IMPORT_KEY。" >&2; exit 1; }
-slim_auth=$(curl -fsS -X POST "$API_URL/api/v1/auth/dev" -H 'content-type: application/json' -d '{"user_id":"local-data-operator"}')
-slim_token=$("$BACKEND_DIR/.venv/bin/python" -c 'import json,sys; print(json.loads(sys.argv[1])["access_token"])' "$slim_auth")
 slim_dry_run=true; if test "$slim_mode" = "--execute"; then slim_dry_run=false; fi
 slim_payload=$("$BACKEND_DIR/.venv/bin/python" -c 'import json,sys; print(json.dumps({"path":sys.argv[1],"version":sys.argv[2],"dry_run":sys.argv[3]=="true"}))' "$slim_import_file" "$slim_version" "$slim_dry_run")
-curl -fsS -X POST "$API_URL/api/v1/admin/foods/import" -H "Authorization: Bearer $slim_token" -H "X-Admin-Import-Key: $slim_admin_key" -H 'content-type: application/json' -d "$slim_payload"
+curl -fsS -X POST "$API_URL/api/v1/admin/foods/import" -H "X-Admin-Import-Key: $slim_admin_key" -H 'content-type: application/json' -d "$slim_payload"
 printf '\n'

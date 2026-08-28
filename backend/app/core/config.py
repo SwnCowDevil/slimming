@@ -1,6 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
+from urllib.parse import urlparse
 
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -50,7 +51,8 @@ class Settings(BaseSettings):
         if self.ai_recipe_enabled:
             if not self.ai_api_key:
                 raise ValueError("production AI recipe API key is required when the feature is enabled")
-            if not self.ai_base_url.rstrip("/").startswith("https://api.deepseek.com"):
+            parsed_ai_url = urlparse(self.ai_base_url)
+            if parsed_ai_url.scheme != "https" or parsed_ai_url.hostname != "api.deepseek.com":
                 raise ValueError("production AI recipes must use the official DeepSeek API")
         return self
 

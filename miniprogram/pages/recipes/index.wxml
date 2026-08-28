@@ -5,5 +5,6 @@
   <scroll-view scroll-x class="filters"><view wx:for="{{filters}}" wx:key="key" data-key="{{item.key}}" bindtap="choose" class="pill {{active===item.key?'active':''}}">{{item.label}}</view></scroll-view>
   <view class="section-head">{{query?'搜索结果':(active==='all'?'智能推荐':'筛选结果')}}</view>
   <view wx:if="{{visible.length}}" class="stack"><recipe-card wx:for="{{visible}}" wx:key="id" recipe="{{item}}" bind:open="open" /></view>
-  <view wx:else class="empty-search"><text>没找到匹配的食谱</text><small>试试更通用的菜名或食材名称</small></view>
+  <view wx:if="{{loading}}" class="empty-search"><small>正在加载…</small></view>
+  <view wx:elif="{{!visible.length}}" class="empty-search"><text>没找到匹配的食谱</text><small>试试更通用的菜名或食材名称</small></view>
 </view>

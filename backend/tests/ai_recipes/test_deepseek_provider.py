@@ -10,6 +10,7 @@ from app.ai_recipes.provider import (
     AiProviderUnavailable,
 )
 from app.ai_recipes.schemas import RecipeGenerationRequest
+from app.main import create_app
 
 
 def _candidate_payload() -> dict:
@@ -135,3 +136,14 @@ def test_invalid_provider_content_is_rejected(content):
 
     with pytest.raises(AiProviderResponseError):
         provider.generate_recipes(_request())
+
+
+def test_app_initializes_one_shared_recipe_provider(monkeypatch, settings):
+    sentinel = object()
+    settings.ai_recipe_enabled = True
+    settings.ai_api_key = "test-provider-key"
+    monkeypatch.setattr("app.main.get_ai_recipe_provider", lambda configured: sentinel)
+
+    app = create_app(settings=settings)
+
+    assert app.state.ai_recipe_provider is sentinel

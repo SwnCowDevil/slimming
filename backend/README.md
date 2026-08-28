@@ -46,6 +46,7 @@ DeepSeek 只接收粗粒度孕期阶段、已保存的过敏/忌口和本次推�
 6. `0011_ai_policy`
 7. `0012_ai_recipe_library`
 8. `0013_recipe_steps`
+9. `0014_recipe_import_fingerprint`
 
 生产发布前备份数据库，并在生产副本上验证升级。发布顺序是：构建新镜像 → 运行迁移 → 迁移成功后启动新服务 → 验证健康检查 → 发布小程序。服务回滚前必须确认旧版本可读取升级后的兼容字段；若必须回退数据库，先停写并从备份恢复或按已验证的 Alembic downgrade 执行。
 
@@ -64,7 +65,7 @@ backend/.venv/bin/pytest -q backend/tests
 ./scripts/import-platform-recipes.sh --execute
 ```
 
-两个导入脚本默认均支持 dry-run；平台食谱导入按内容哈希幂等更新。生产执行前需确保数据文件位于 `SLIMMING_TKA_IMPORT_ROOT` 允许目录且后端已启动。
+两个导入脚本默认均支持 dry-run；平台食谱导入按内容哈希幂等更新。导入接口使用独立的 `SLIMMING_ADMIN_IMPORT_KEY` 服务凭据，不依赖仅限开发环境的 `/auth/dev`。生产执行前需确保数据文件位于 `SLIMMING_TKA_IMPORT_ROOT` 允许目录且后端已启动。
 
 推荐会话是短期数据，不是收藏食谱或饮食历史。建议由部署调度器每天执行一次：
 

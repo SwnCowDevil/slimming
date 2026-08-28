@@ -112,7 +112,6 @@ def list_visible_recipes(
             continue
         refresh_nutrition_snapshot(session, recipe)
         filtered.append(recipe)
-    session.commit()
     return filtered[offset : offset + limit]
 
 

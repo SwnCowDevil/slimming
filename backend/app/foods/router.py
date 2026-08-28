@@ -45,7 +45,6 @@ def get_food(
 def import_foods(
     body: ImportRequest,
     admin_import_key: str = Header(default="", alias="X-Admin-Import-Key"),
-    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
     settings: Settings = Depends(get_settings),
 ) -> ImportReport:

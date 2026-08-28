@@ -10,7 +10,7 @@
     <view class="timeline-group" wx:for="{{timelineGroups}}" wx:key="id">
       <view class="group-head"><view><text class="group-time">{{item.time}}</text><text class="group-name">{{item.title}}</text></view><text class="group-kcal">{{item.kcal}} kcal</text></view>
       <view class="record-row" wx:for="{{item.items}}" wx:for-item="food" wx:key="id">
-        <view><text class="food-name">{{food.food_name}}</text><text class="food-meta">{{food.grams}} 克 · {{food.energy_kcal}} kcal</text></view>
+        <view><text class="food-name">{{food.food_name}}</text><text class="food-meta">{{food.grams}} 克 · {{food.energy_kcal}} kcal{{food.nutrition_source==='ai_estimated'?' · AI 估算':''}}</text></view>
         <text class="actor">{{food.created_by_user_id===food.subject_user_id?'本人记录':'家人代记'}}</text>
       </view>
       <button class="group-add" data-section="{{item}}" bindtap="addToGroup">＋ 继续记录</button>

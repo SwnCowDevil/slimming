@@ -60,7 +60,8 @@ Page({
     }
   },
   open(e) {
-    const recipe = e.detail.recipe.savedRecipe;
+    const item = e.detail.recipe;
+    const recipe = item.savedRecipe || (!item.candidateId && item.id ? item : null);
     if (!recipe) { wx.showToast({ title: "收藏后可查看完整食谱", icon: "none" }); return; }
     wx.setStorageSync("recipes.selected", recipe);
     wx.navigateTo({ url: `/pages/recipe-detail/index?id=${recipe.id}` });

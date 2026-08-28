@@ -176,7 +176,7 @@ def _candidate_payload(candidate_id: str = "candidate-save-1") -> dict:
         "summary": "清淡家常的一餐",
         "meal_type": "dinner",
         "tags": ["home-style"],
-        "servings": 1,
+        "servings": 2,
         "minutes": 25,
         "ingredients": [{
             "name_zh": "鸡胸肉",
@@ -194,9 +194,9 @@ def _candidate_payload(candidate_id: str = "candidate-save-1") -> dict:
         "steps": ["鸡肉彻底加热至中心完全熟透。"],
         "allergens": [],
         "nutrition_per_serving": {
-            "energy_kcal": 159.6,
-            "protein_g": 28.8,
-            "fat_g": 3.6,
+            "energy_kcal": 79.8,
+            "protein_g": 14.4,
+            "fat_g": 1.8,
             "carbohydrate_g": 0,
             "fiber_g": 0,
         },
@@ -250,6 +250,7 @@ def test_saving_candidate_creates_private_favorite_and_is_idempotent(client, aut
     assert first.json()["id"] == second.json()["id"]
     assert first.json()["visibility"] == "private"
     assert first.json()["is_favorite"] is True
+    assert float(first.json()["items"][0]["grams"]) == 60
 
 
 def test_expired_candidate_cannot_be_saved(client, auth_headers):
