@@ -120,6 +120,8 @@ def create_episode(session: Session, user: User, body: PregnancyCreate) -> Pregn
         MealSchedule(code=code, display_name=name, scheduled_time=scheduled, position=position)
         for code, name, scheduled, position in DEFAULT_MEAL_SCHEDULES
     ]
+    session.add_all([episode, user])
+    session.flush()
     existing_weight = session.scalar(
         select(WeightEntry).where(
             WeightEntry.user_id == user.id, WeightEntry.recorded_date == date.today()
@@ -129,14 +131,19 @@ def create_episode(session: Session, user: User, body: PregnancyCreate) -> Pregn
         session.add(
             WeightEntry(
                 user_id=user.id,
+                pregnancy_episode_id=episode.id,
+                subject_user_id=user.id,
+                created_by_user_id=user.id,
                 recorded_date=date.today(),
                 weight_kg=body.current_weight_kg,
             )
         )
     else:
         existing_weight.weight_kg = body.current_weight_kg
+        existing_weight.pregnancy_episode_id = episode.id
+        existing_weight.subject_user_id = user.id
+        existing_weight.created_by_user_id = user.id
     user.product_mode = "pregnancy"
-    session.add_all([episode, user])
     session.commit()
     return require_active_episode(session, user.id)
 
@@ -160,8 +167,17 @@ def update_episode(
             )
         )
         if weight is None:
-            weight = WeightEntry(user_id=user.id, recorded_date=date.today())
+            weight = WeightEntry(
+                user_id=user.id,
+                pregnancy_episode_id=episode.id,
+                subject_user_id=user.id,
+                created_by_user_id=user.id,
+                recorded_date=date.today(),
+            )
         weight.weight_kg = current_weight
+        weight.pregnancy_episode_id = episode.id
+        weight.subject_user_id = user.id
+        weight.created_by_user_id = user.id
         session.add(weight)
     session.add_all([episode, preference])
     session.commit()

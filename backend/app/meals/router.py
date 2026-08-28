@@ -32,7 +32,9 @@ def list_entries(
     session: Session = Depends(get_session),
 ) -> MealList:
     items = session.scalars(
-        select(MealEntry).where(MealEntry.user_id == current_user.id, MealEntry.meal_date == meal_date)
+        select(MealEntry).where(
+            MealEntry.subject_user_id == current_user.id,
+            MealEntry.meal_date == meal_date,
+        )
     ).all()
     return MealList(items=list(items))
-
