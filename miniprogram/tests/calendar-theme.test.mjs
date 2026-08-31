@@ -28,3 +28,9 @@ test("calendar fills its padded card instead of using the viewport width", () =>
   assert.equal(style.width, "100%");
   assert.equal(style["max-width"], "100%");
 });
+
+test("week view keeps wx-calendar's intrinsic month height for row offsets", () => {
+  const style = parseInlineStyle(calendarStyle);
+
+  assert.equal(style["--wc-panel-height"], undefined);
+});

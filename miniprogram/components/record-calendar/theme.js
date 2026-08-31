@@ -17,7 +17,6 @@ const calendarTheme = {
   "--wc-date-size": "28rpx",
   "--wc-mark-size": "20rpx",
   "--wc-corner-size": "18rpx",
-  "--wc-panel-height": "112rpx",
 };
 const calendarStyle = [
   "width:100%",
