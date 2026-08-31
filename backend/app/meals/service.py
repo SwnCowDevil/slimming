@@ -4,10 +4,11 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.foods.models import Food
+from app.foods.models import Food, FoodAlias
+from app.foods.tka_provider import load_local_aliases
 from app.family.service import authorize_subject
 from app.meals.models import MealEntry
-from app.meals.schemas import MealEntryCreate
+from app.meals.schemas import MealEntryCreate, MealEntryRead
 from app.pregnancies.models import MealSchedule
 from app.pregnancies.service import get_active_episode
 from app.recipes.models import Recipe, RecipeItem
@@ -19,6 +20,35 @@ DEFAULT_MEAL_NAMES = {
     "dinner": "晚餐",
     "snack": "加餐",
 }
+
+
+def localize_meal_entries(session: Session, entries: list[MealEntry]) -> list[MealEntryRead]:
+    food_ids = {entry.food_id for entry in entries if entry.food_id is not None}
+    chinese_names: dict[str, str] = {}
+    if food_ids:
+        source_ids = dict(
+            session.execute(select(Food.id, Food.source_food_id).where(Food.id.in_(food_ids))).all()
+        )
+        reviewed_aliases = load_local_aliases()
+        aliases = session.execute(
+            select(FoodAlias.food_id, FoodAlias.name).where(
+                FoodAlias.food_id.in_(food_ids),
+                FoodAlias.locale == "zh-CN",
+            ).order_by(FoodAlias.name)
+        ).all()
+        for food_id, name in aliases:
+            chinese_names.setdefault(food_id, name)
+        for food_id, source_food_id in source_ids.items():
+            names = reviewed_aliases.get(source_food_id, [])
+            if names:
+                chinese_names[food_id] = names[0]
+    result = []
+    for entry in entries:
+        item = MealEntryRead.model_validate(entry)
+        if entry.food_id in chinese_names:
+            item.food_name = chinese_names[entry.food_id]
+        result.append(item)
+    return result
 
 
 def create_meal_entry(

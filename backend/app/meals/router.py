@@ -10,7 +10,7 @@ from app.db.session import get_session
 from app.family.service import authorize_subject
 from app.meals.models import MealEntry
 from app.meals.schemas import MealEntryCreate, MealEntryRead, MealList
-from app.meals.service import create_meal_entry
+from app.meals.service import create_meal_entry, localize_meal_entries
 
 
 router = APIRouter(prefix="/api/v1/meals", tags=["meals"])
@@ -22,8 +22,9 @@ def create_entry(
     idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=128),
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
-) -> MealEntry:
-    return create_meal_entry(session, current_user.id, body, idempotency_key)
+) -> MealEntryRead:
+    entry = create_meal_entry(session, current_user.id, body, idempotency_key)
+    return localize_meal_entries(session, [entry])[0]
 
 
 @router.get("", response_model=MealList)
@@ -47,4 +48,4 @@ def list_entries(
             MealEntry.meal_date == meal_date,
         )
     ).all()
-    return MealList(items=list(items))
+    return MealList(items=localize_meal_entries(session, list(items)))

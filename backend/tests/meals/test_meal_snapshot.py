@@ -3,7 +3,9 @@ from decimal import Decimal
 from pathlib import Path
 
 from app.auth.models import User
+from app.db.session import get_session
 from app.foods.tka_provider import TkaProvider
+from app.meals.models import MealEntry
 from app.meals.schemas import MealEntryCreate
 from app.meals.service import create_meal_entry
 
@@ -47,3 +49,35 @@ def test_duplicate_idempotency_key_returns_same_entry(client, auth_headers):
 
     assert first["id"] == second["id"]
     assert len(client.get("/api/v1/meals?date=2026-08-19", headers=auth_headers).json()["items"]) == 1
+
+
+def test_meal_api_uses_chinese_alias_for_new_and_existing_tka_records(client, auth_headers):
+    client.post(
+        "/api/v1/admin/foods/import",
+        headers=auth_headers,
+        json={"path": str(FIXTURE), "version": "fixture-2026-08", "dry_run": False},
+    )
+    created = client.post(
+        "/api/v1/meals",
+        headers={**auth_headers, "Idempotency-Key": "localized-meal"},
+        json={
+            "meal_date": "2026-08-19",
+            "meal_type": "breakfast",
+            "source_food_id": "8535",
+            "grams": 10,
+        },
+    )
+
+    assert created.status_code == 200
+    assert created.json()["food_name"] == "琼脂"
+
+    session_iterator = client.app.dependency_overrides[get_session]()
+    session = next(session_iterator)
+    entry = session.get(MealEntry, created.json()["id"])
+    assert entry.food_name == "Agar, powder"
+    session.close()
+
+    listed = client.get("/api/v1/meals?date=2026-08-19", headers=auth_headers)
+
+    assert listed.status_code == 200
+    assert listed.json()["items"][0]["food_name"] == "琼脂"

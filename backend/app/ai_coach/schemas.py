@@ -46,3 +46,20 @@ class PregnancyAiRequest(BaseModel):
     context: AiContext = Field(default_factory=lambda: AiContext(pregnancy=True))
     period: Literal[7, 30, 90] = 7
     current_recipe_id: str | None = None
+
+
+class ReflectionGenerationResult(BaseModel):
+    response_text: str = Field(min_length=1, max_length=500)
+    model: str = Field(min_length=1, max_length=128)
+    prompt_version: str = Field(min_length=1, max_length=64)
+
+
+class ReflectionDecision(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    focus_fact_indexes: list[int] = Field(default_factory=list, max_length=2)
+    next_step: Literal[
+        "keep_recording",
+        "complete_meal_context",
+        "diversify_food_categories",
+    ]

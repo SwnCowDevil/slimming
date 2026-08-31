@@ -160,3 +160,85 @@ def test_app_initializes_one_shared_recipe_provider(monkeypatch, settings):
     app = create_app(settings=settings)
 
     assert app.state.ai_recipe_provider is sentinel
+
+
+def test_deepseek_provider_generates_short_reflection_from_summary_facts_only():
+    captured = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured["body"] = json.loads(request.content)
+        return httpx.Response(
+            200,
+            json={
+                "model": "deepseek-v4-flash",
+                "choices": [{"message": {"content": json.dumps({"focus_fact_indexes": [0], "next_step": "keep_recording"}, ensure_ascii=False)}}],
+            },
+        )
+
+    provider = DeepSeekRecipeProvider(
+        api_key="test-key",
+        model="deepseek-v4-flash",
+        client=httpx.Client(transport=httpx.MockTransport(handler), base_url="https://api.deepseek.com"),
+    )
+    generate = getattr(provider, "generate_reflection", None)
+
+    assert callable(generate), "DeepSeek provider must implement pregnancy reflection generation"
+    result = generate(period=7, facts=["本周期记录饮食 2 天", "覆盖 4 个食物类别"])
+    assert result.response_text == "本周期记录饮食 2 天。先保持真实、规律记录，后续回顾会更有参考价值。"
+    assert result.model == "deepseek-v4-flash"
+    assert captured["body"]["thinking"] == {"type": "disabled"}
+    assert captured["body"]["max_tokens"] <= 500
+    user_message = json.loads(captured["body"]["messages"][1]["content"])
+    assert user_message == {
+        "period": 7,
+        "facts": ["本周期记录饮食 2 天", "覆盖 4 个食物类别"],
+    }
+
+
+@pytest.mark.parametrize(
+    "reflection",
+    [
+        "你需要在孕期减重 5 公斤。",
+        "从记录可以判断胎儿发育正常。",
+        "根据饮食记录建议你停药。",
+        "建议你每天服用阿司匹林。",
+        "这些记录说明宝宝一切正常。",
+        "你患有妊娠糖尿病，应减少主食。",
+    ],
+)
+def test_deepseek_reflection_rejects_medical_or_weight_loss_advice(reflection):
+    provider = DeepSeekRecipeProvider(
+        api_key="test-key",
+        model="deepseek-v4-flash",
+        client=httpx.Client(
+            transport=httpx.MockTransport(
+                lambda request: httpx.Response(
+                    200,
+                    json={"choices": [{"message": {"content": json.dumps({"reflection": reflection}, ensure_ascii=False)}}]},
+                )
+            ),
+            base_url="https://api.deepseek.com",
+        ),
+    )
+
+    with pytest.raises(AiProviderResponseError):
+        provider.generate_reflection(period=7, facts=["本周期记录饮食 2 天"])
+
+
+def test_deepseek_reflection_rejects_oversized_output_as_provider_response_error():
+    provider = DeepSeekRecipeProvider(
+        api_key="test-key",
+        model="deepseek-v4-flash",
+        client=httpx.Client(
+            transport=httpx.MockTransport(
+                lambda request: httpx.Response(
+                    200,
+                    json={"choices": [{"message": {"content": json.dumps({"reflection": "记" * 501}, ensure_ascii=False)}}]},
+                )
+            ),
+            base_url="https://api.deepseek.com",
+        ),
+    )
+
+    with pytest.raises(AiProviderResponseError):
+        provider.generate_reflection(period=7, facts=["本周期记录饮食 2 天"])
