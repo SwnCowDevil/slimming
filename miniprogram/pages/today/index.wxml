@@ -8,7 +8,7 @@
     <view class="weight" bindtap="recordWeight"><text>{{currentWeightKg||'—'}}</text><small>kg · 记录体重</small></view>
   </view>
   <scroll-view scroll-x class="feelings"><view wx:for="{{wellbeingOptions}}" wx:key="code" data-code="{{item.code}}" bindtap="toggleFeeling" class="feeling {{item.selected?'active':''}}">{{item.label}}</view></scroll-view>
-  <view class="quick"><button class="quick-main" bindtap="scanFood">拍照识别食物</button><button bindtap="recordWeight">记录体重</button></view>
+  <view class="quick"><button class="quick-main" bindtap="estimateFood">食物估重</button><button bindtap="recordWeight">记录体重</button></view>
   <view class="section-head"><text>接下来的一餐</text><text>已记录 {{completedMealCount}}/{{totalMealCount}} 餐次</text></view>
   <pregnancy-meal wx:if="{{focusSection}}" section="{{focusSection}}" bind:add="addMeal" bind:edittime="editTime" />
   <view wx:if="{{otherSections.length}}" class="other-meals">

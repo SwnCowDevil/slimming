@@ -15,7 +15,7 @@ Page({
   editTime(e){this.showTimeEditor(e.detail.section);},
   showTimeEditor(s){wx.showModal({title:`修改${s.title}时间`,content:s.time,editable:true,placeholderText:"例如 08:00",success:async(result)=>{if(!result.confirm)return;if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(result.content))return wx.showToast({title:"请输入 HH:mm 格式",icon:"none"});try{await updateMealSchedule(s.scheduleId,{scheduled_time:result.content});this.load();}catch(error){wx.showToast({title:"保存失败",icon:"none"});}}});},
   toggleFeeling(e){const code=e.currentTarget.dataset.code;let next=this.data.feelingCodes.indexOf(code)>=0?this.data.feelingCodes.filter(x=>x!==code):[...this.data.feelingCodes,code];if(code==="normal"&&next.indexOf(code)>=0)next=["normal"];else next=next.filter(x=>x!=="normal");this.setData({feelingCodes:next,wellbeingOptions:this.data.wellbeingOptions.map(item=>({...item,selected:next.indexOf(item.code)>=0}))});clearTimeout(this.feelingTimer);this.feelingTimer=setTimeout(()=>saveWellbeing(localDateKey(),{feeling_codes:next}).catch(()=>wx.showToast({title:"感受保存失败",icon:"none"})),250);},
-  scanFood(){wx.navigateTo({url:"/pages/photo-recognition/index"});},
+  estimateFood(){wx.navigateTo({url:`/pages/food-estimate/index?date=${localDateKey()}`});},
   recordWeight(){wx.showModal({title:"记录今天体重",editable:true,placeholderText:"例如 62.5",success:async(result)=>{if(!result.confirm)return;const value=Number(result.content);if(value<30||value>300)return wx.showToast({title:"请输入有效体重",icon:"none"});try{await saveWeight(localDateKey(),value);this.setData({currentWeightKg:value});wx.showToast({title:"已记录"});}catch(error){wx.showToast({title:"记录失败",icon:"none"});}}});},
   openAi(){wx.navigateTo({url:"/pages/ai-coach/index"});},
 });

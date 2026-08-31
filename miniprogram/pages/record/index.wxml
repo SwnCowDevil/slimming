@@ -1,6 +1,6 @@
 <view class="page record">
   <record-calendar marks="{{marks}}" bind:datechange="dateChange" bind:viewchange="viewChange" />
-  <view class="quick"><button bindtap="search">搜索食物</button><button bindtap="recent">最近吃过</button><button bindtap="photo">拍照识别</button></view>
+  <view class="quick"><button bindtap="search">搜索食物</button><button bindtap="recent">最近吃过</button><button bindtap="estimateFood">食物估重</button></view>
   <view class="record-summary">
     <view><text class="summary-date">{{selectedDate}}</text><text class="summary-label">当日记录</text></view>
     <view class="summary-facts"><text>{{recordCount}} 项</text><text wx:if="{{recordCount}}">{{totalKcal}} kcal</text></view>
@@ -16,5 +16,5 @@
       <button class="group-add" data-section="{{item}}" bindtap="addToGroup">＋ 继续记录</button>
     </view>
   </view>
-  <view wx:else class="empty-record"><text>这一天还没有饮食记录</text><small>可以搜索食物或拍照后确认份量</small><button bindtap="search">添加第一条记录</button></view>
+  <view wx:else class="empty-record"><text>这一天还没有饮食记录</text><small>可以搜索食物，或参考估重后确认份量</small><button bindtap="search">添加第一条记录</button></view>
 </view>

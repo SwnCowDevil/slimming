@@ -1,1 +1,25 @@
-<view class="page stack"><view class="title">不用秤，也能先估个大概</view><view class="subtitle">这些是常见熟食的粗略范围，正式记录前仍可调整克数。</view><view wx:for="{{items}}" wx:key="name" class="card estimate"><view>{{item.name}}</view><text>{{item.reference}}</text><strong>{{item.grams}}</strong></view></view>
+<view class="page estimate-page">
+  <view class="estimate-intro">
+    <view class="title">食物估重</view>
+    <view class="subtitle">选择接近的实物参照和份数，再去搜索确认食物。</view>
+  </view>
+  <scroll-view class="category-scroll" scroll-x enhanced show-scrollbar="false">
+    <view class="category-row">
+      <button wx:for="{{categories}}" wx:key="key" class="category {{activeCategory===item.key?'active':''}}" data-key="{{item.key}}" bindtap="selectCategory">{{item.label}}</button>
+    </view>
+  </scroll-view>
+  <view class="estimate-list">
+    <view class="estimate-row" wx:for="{{visibleItems}}" wx:key="id">
+      <view class="item-head">
+        <view class="item-copy"><text class="item-name">{{item.name}}</text><text class="item-reference">{{item.reference}}</text></view>
+        <text class="item-detail">{{item.detail}}</text>
+      </view>
+      <view class="estimate-result">
+        <view class="weight-copy"><small>当前估算</small><strong>{{item.gramsLabel}}</strong></view>
+        <view class="stepper"><button aria-label="减少半份" data-id="{{item.id}}" data-delta="-1" bindtap="adjust">−</button><text>{{item.portionsLabel}} 份</text><button aria-label="增加半份" data-id="{{item.id}}" data-delta="1" bindtap="adjust">＋</button></view>
+      </view>
+      <button class="record-action" data-keyword="{{item.keyword}}" bindtap="record">搜索并记录</button>
+    </view>
+  </view>
+  <view class="estimate-note">估重只用于帮助填写份量。食材大小、可食部和烹饪失水会影响实际重量，记录前仍可调整克数。</view>
+</view>

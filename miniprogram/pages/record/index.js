@@ -22,5 +22,5 @@ Page({
   addToGroup(e){const s=e.currentTarget.dataset.section;wx.navigateTo({url:`/pages/food-search/index?date=${this.data.selectedDate}&scheduleId=${s.scheduleId}&mealType=${s.mealType||"snack"}&mealName=${encodeURIComponent(s.title)}`});},
   search(){wx.navigateTo({url:`/pages/food-search/index?date=${this.data.selectedDate}`});},
   recent(){wx.showToast({title:"最近食物将在搜索页展示",icon:"none"});},
-  photo(){wx.navigateTo({url:"/pages/photo-recognition/index"});}
+  estimateFood(){wx.navigateTo({url:`/pages/food-estimate/index?date=${this.data.selectedDate}`});}
 });
