@@ -68,6 +68,35 @@ def test_raw_egg_is_rejected_but_fully_cooked_egg_is_allowed():
     assert cooked.allowed is True
 
 
+def test_egg_only_recipe_accepts_explicit_generic_full_cook_requirement():
+    candidate = _candidate("鸡蛋", ["鸡蛋打散。", "蛋液炒至凝固。"])
+    candidate.cooking_requirements = ["彻底炒熟"]
+
+    result = validate_candidate(candidate, allergens=set(), avoidances=set())
+
+    assert result.allowed is True
+
+
+def test_single_fish_recipe_accepts_explicit_generic_full_cook_requirement():
+    candidate = _candidate("鲈鱼", ["鲈鱼处理干净。", "水开后上锅蒸十分钟。"])
+    candidate.cooking_requirements = ["完全蒸熟"]
+
+    result = validate_candidate(candidate, allergens=set(), avoidances=set())
+
+    assert result.allowed is True
+
+
+def test_generic_full_cook_requirement_does_not_cover_multiple_risky_groups():
+    candidate = _candidate("鸡胸肉", ["鸡胸肉和鸡蛋一起下锅。"])
+    candidate.ingredients.append(candidate.ingredients[0].model_copy(update={"name_zh": "鸡蛋"}))
+    candidate.cooking_requirements = ["彻底炒熟"]
+
+    result = validate_candidate(candidate, allergens=set(), avoidances=set())
+
+    assert result.allowed is False
+    assert result.reason == "pregnancy_risk:missing_full_cook_instruction:poultry"
+
+
 def test_user_allergen_discards_candidate():
     result = validate_candidate(_candidate("花生碎"), allergens={"peanut"}, avoidances=set())
 

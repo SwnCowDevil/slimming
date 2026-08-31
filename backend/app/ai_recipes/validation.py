@@ -66,7 +66,19 @@ ALLERGEN_ALIASES = {
     "sesame": {"芝麻", "芝麻酱"},
 }
 
-COOKED_TERMS = {"全熟", "熟透", "完全凝固", "中心熟", "彻底加热", "煮沸"}
+COOKED_TERMS = {
+    "全熟",
+    "熟透",
+    "完全凝固",
+    "中心熟",
+    "彻底加热",
+    "煮沸",
+    "炒熟",
+    "蒸熟",
+    "煮熟",
+    "烤熟",
+    "熟制",
+}
 UNSAFE_COOKING_TERMS = {
     "流心",
     "蛋黄可流动",
@@ -84,6 +96,26 @@ FULL_COOK_GROUPS = {
     "fish": ({"鱼"}, {"鱼", "鱼肉", "水产"}),
     "shellfish": ({"虾", "蟹", "贝", "蚝", "牡蛎"}, {"虾", "蟹", "贝", "蚝", "牡蛎", "水产"}),
 }
+
+
+def _ingredient_matches_group(group: str, name: str) -> bool:
+    if group == "poultry":
+        without_eggs = name.replace("鸡蛋", "").replace("鸭蛋", "").replace("鹅蛋", "")
+        return any(alias in without_eggs for alias in ("鸡", "鸭", "鹅", "禽肉"))
+    if group == "meat":
+        if any(alias in name for alias in ("猪", "牛", "羊")):
+            return True
+        if "肉" not in name:
+            return False
+        return not any(alias in name for alias in ("鸡", "鸭", "鹅", "鱼", "虾", "蟹", "贝"))
+    ingredient_aliases, _ = FULL_COOK_GROUPS[group]
+    return any(alias in name for alias in ingredient_aliases)
+
+
+def _safe_cooking_instruction(instruction: str) -> bool:
+    return any(term in instruction for term in COOKED_TERMS) and not any(
+        term in instruction for term in UNSAFE_COOKING_TERMS
+    )
 
 
 @dataclass(frozen=True)
@@ -147,16 +179,23 @@ def validate_candidate(
     if any(term in " ".join(instructions) for term in UNSAFE_COOKING_TERMS):
         return ValidationResult(False, "pregnancy_risk:undercooked_instruction", None)
     ingredient_names = [item.name_zh for item in candidate.ingredients]
-    for group, (ingredient_aliases, instruction_aliases) in FULL_COOK_GROUPS.items():
-        if not any(alias in name for name in ingredient_names for alias in ingredient_aliases):
-            continue
+    active_groups = [
+        group
+        for group in FULL_COOK_GROUPS
+        if any(_ingredient_matches_group(group, name) for name in ingredient_names)
+    ]
+    generic_requirement_is_safe = len(active_groups) == 1 and any(
+        _safe_cooking_instruction(instruction)
+        for instruction in candidate.cooking_requirements
+    )
+    for group in active_groups:
+        _, instruction_aliases = FULL_COOK_GROUPS[group]
         has_safe_instruction = any(
             any(alias in instruction for alias in instruction_aliases)
-            and any(term in instruction for term in COOKED_TERMS)
-            and not any(term in instruction for term in UNSAFE_COOKING_TERMS)
+            and _safe_cooking_instruction(instruction)
             for instruction in instructions
         )
-        if not has_safe_instruction:
+        if not has_safe_instruction and not generic_requirement_is_safe:
             return ValidationResult(False, f"pregnancy_risk:missing_full_cook_instruction:{group}", None)
 
     normalized = candidate.model_copy(deep=True)

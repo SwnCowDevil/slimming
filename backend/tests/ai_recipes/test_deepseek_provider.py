@@ -89,6 +89,19 @@ def test_deepseek_provider_requests_json_and_returns_usage_metadata():
     assert result.usage.input_tokens == 123
     assert result.usage.output_tokens == 88
     assert captured["body"]["response_format"] == {"type": "json_object"}
+    assert captured["body"]["thinking"] == {"type": "disabled"}
+    assert captured["body"]["max_tokens"] == 3000
+    user_payload = json.loads(captured["body"]["messages"][1]["content"])
+    assert user_payload["request"]["pregnancy_stage"] == "second_trimester"
+    recipe_array_schema = user_payload["output_schema"]["properties"]["recipes"]
+    assert recipe_array_schema["minItems"] == 3
+    assert recipe_array_schema["maxItems"] == 3
+    ingredient_schema = user_payload["output_schema"]["$defs"]["CandidateIngredient"]
+    assert {"name_zh", "grams", "energy_kcal_per_100g"}.issubset(ingredient_schema["required"])
+    recipe_schema = user_payload["output_schema"]["$defs"]["RecipeCandidate"]
+    assert recipe_schema["properties"]["ingredients"]["maxItems"] == 8
+    assert recipe_schema["properties"]["steps"]["maxItems"] == 5
+    assert recipe_schema["properties"]["cooking_requirements"]["maxItems"] == 3
 
 
 @pytest.mark.parametrize("status_code", [429, 500, 503])

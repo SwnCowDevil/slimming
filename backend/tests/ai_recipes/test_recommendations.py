@@ -115,6 +115,26 @@ class InvalidResponseThenValidProvider(FakeProvider):
         return super().generate_recipes(request)
 
 
+class PartialSafeProvider:
+    def __init__(self) -> None:
+        self.calls = 0
+
+    def generate_recipes(self, request):
+        self.calls += 1
+        safe = _candidate("冬瓜鸡肉汤")
+        too_slow = _candidate("慢炖鸡肉汤")
+        too_slow.minutes = 60
+        wrong_meal = _candidate("早餐鸡蛋")
+        wrong_meal.meal_type = "breakfast"
+        return ProviderGenerationResult(
+            candidates=[safe, too_slow, wrong_meal],
+            model="fake-deepseek",
+            prompt_version="test-prompt-v1",
+            latency_ms=5,
+            usage=ProviderUsage(input_tokens=50, output_tokens=50),
+        )
+
+
 def _create_pregnancy(client, headers):
     response = client.post(
         "/api/v1/pregnancies",
@@ -130,6 +150,16 @@ def _create_pregnancy(client, headers):
         },
     )
     assert response.status_code == 201
+
+
+def _add_reviewed_recipes(client, titles: list[str]) -> None:
+    session_iterator = client.app.dependency_overrides[get_session]()
+    session = next(session_iterator)
+    session.add_all(
+        [Recipe(id=f"reviewed-{index}", title=title, visibility="platform") for index, title in enumerate(titles)]
+    )
+    session.commit()
+    session.close()
 
 
 def _recommend(client, headers, key="recommend-1"):
@@ -265,6 +295,7 @@ def test_invalid_provider_json_is_retried(client, auth_headers, settings):
 
 def test_request_dislikes_and_hard_filters_are_enforced(client, auth_headers, settings):
     _create_pregnancy(client, auth_headers)
+    _add_reviewed_recipes(client, ["平台南瓜粥", "平台蔬菜汤", "平台番茄饭"])
     settings.ai_max_retries = 1
     provider = FakeProvider(
         [
@@ -304,12 +335,13 @@ def test_request_dislikes_and_hard_filters_are_enforced(client, auth_headers, se
 
     assert response.status_code == 201
     assert {item["title"] for item in response.json()["candidates"]} == {
-        "冬瓜鸡肉汤", "西兰花鸡肉饭", "菌菇鸡肉煲"
+        "平台南瓜粥", "平台蔬菜汤", "平台番茄饭"
     }
 
 
 def test_inconsistent_nutrition_candidate_is_rejected_and_supplemented(client, auth_headers, settings):
     _create_pregnancy(client, auth_headers)
+    _add_reviewed_recipes(client, ["平台南瓜粥", "平台蔬菜汤", "平台番茄饭"])
     settings.ai_max_retries = 1
     provider = InconsistentThenValidProvider()
     client.app.state.ai_recipe_provider = provider
@@ -318,10 +350,40 @@ def test_inconsistent_nutrition_candidate_is_rejected_and_supplemented(client, a
 
     assert response.status_code == 201
     assert len(response.json()["candidates"]) == 3
-    assert provider.calls == 2
+    assert provider.calls == 1
 
 
-def test_generation_excludes_existing_platform_recipe(client, auth_headers):
+def test_partial_safe_batch_uses_one_provider_call_and_reviewed_recipes_to_reach_three(
+    client, auth_headers, settings
+):
+    _create_pregnancy(client, auth_headers)
+    settings.ai_max_retries = 2
+    session_iterator = client.app.dependency_overrides[get_session]()
+    session = next(session_iterator)
+    session.add_all(
+        [
+            Recipe(id="reviewed-a", title="平台番茄汤", visibility="platform"),
+            Recipe(id="reviewed-b", title="平台蔬菜粥", visibility="platform"),
+        ]
+    )
+    session.commit()
+    session.close()
+    provider = PartialSafeProvider()
+    client.app.state.ai_recipe_provider = provider
+
+    response = _recommend(client, auth_headers, "partial-safe-batch")
+
+    assert response.status_code == 201
+    assert response.json()["mode"] == "ai"
+    assert len(response.json()["candidates"]) == 3
+    assert provider.calls == 1
+    assert {item.get("source_type", "ai") for item in response.json()["candidates"]} == {
+        "ai",
+        "platform",
+    }
+
+
+def test_generation_prompt_excludes_existing_platform_recipe(client, auth_headers):
     _create_pregnancy(client, auth_headers)
     session_iterator = client.app.dependency_overrides[get_session]()
     session = next(session_iterator)
@@ -341,11 +403,12 @@ def test_generation_excludes_existing_platform_recipe(client, auth_headers):
     response = _recommend(client, auth_headers, "catalog-dedupe")
 
     assert response.status_code == 201
-    assert {item["title"] for item in response.json()["candidates"]} == {
-        "冬瓜鸡肉汤",
-        "西兰花鸡肉饭",
-        "菌菇鸡肉煲",
+    assert len(response.json()["candidates"]) == 3
+    ai_titles = {
+        item["title"] for item in response.json()["candidates"] if item.get("candidate_id")
     }
+    assert ai_titles == {"冬瓜鸡肉汤", "西兰花鸡肉饭"}
+    assert len(provider.requests) == 1
     assert provider.requests[0].excluded_fingerprints
 
 

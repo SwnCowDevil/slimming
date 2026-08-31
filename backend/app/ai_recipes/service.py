@@ -123,9 +123,44 @@ def _enforce_rate_limit(session: Session, user_id: str, ip_hash: str, settings: 
         raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="推荐请求过于频繁，请稍后再试")
 
 
-def _fallback_candidates(session: Session, user_id: str) -> list[dict]:
-    recipes = list_visible_recipes(session, user_id, limit=3)
-    return [RecipeRead.model_validate(recipe).model_dump(mode="json") for recipe in recipes]
+def _fallback_candidates(
+    session: Session,
+    user_id: str,
+    *,
+    limit: int = 3,
+    max_minutes: int | None = None,
+    excluded_recipe_ids: set[str] | None = None,
+) -> list[dict]:
+    excluded_ids = excluded_recipe_ids or set()
+    recipes = list_visible_recipes(session, user_id, max_minutes=max_minutes, limit=50)
+    return [
+        RecipeRead.model_validate(recipe).model_dump(mode="json")
+        for recipe in recipes
+        if recipe.id not in excluded_ids
+    ][:limit]
+
+
+def _complete_candidate_batch(
+    session: Session,
+    user_id: str,
+    generated: list[dict],
+    *,
+    max_minutes: int | None = None,
+    excluded_recipe_ids: set[str] | None = None,
+) -> list[dict]:
+    completed = list(generated[:3])
+    if len(completed) == 3:
+        return completed
+    completed.extend(
+        _fallback_candidates(
+            session,
+            user_id,
+            limit=3 - len(completed),
+            max_minutes=max_minutes,
+            excluded_recipe_ids=excluded_recipe_ids,
+        )
+    )
+    return completed
 
 
 def _generation_request(
@@ -243,8 +278,7 @@ def _generate_candidates(
             accepted.append(enriched.model_dump(mode="json"))
             if len(accepted) == 3:
                 break
-        if len(accepted) == 3:
-            break
+        break
     metadata = {
         "provider_call_count": provider_calls,
         "provider_model": last_result.model if last_result else None,
@@ -333,12 +367,18 @@ def create_recommendation_session(
         )
         return _finish_event(session, event, batch, {}, "provider_unavailable")
 
-    recommendation_session.candidates = candidates
+    batch_candidates = _complete_candidate_batch(
+        session,
+        user.id,
+        candidates,
+        max_minutes=body.filters.max_minutes,
+    )
+    recommendation_session.candidates = batch_candidates
     recommendation_session.displayed_fingerprints = [item["content_fingerprint"] for item in candidates]
     batch = RecommendationBatch(
         session_id=recommendation_session.id,
         mode="ai" if candidates else "fallback",
-        candidates=candidates or _fallback_candidates(session, user.id),
+        candidates=batch_candidates,
         expires_at=expires_at,
         notice=AI_NOTICE,
     )
@@ -413,7 +453,19 @@ def next_recommendation_batch(
             notice=AI_NOTICE,
         )
         return _finish_event(session, event, batch, {}, "provider_unavailable")
-    recommendation_session.candidates = [*recommendation_session.candidates, *candidates]
+    excluded_recipe_ids = {
+        item["id"]
+        for item in recommendation_session.candidates
+        if item.get("id") and not item.get("candidate_id")
+    }
+    batch_candidates = _complete_candidate_batch(
+        session,
+        user.id,
+        candidates,
+        max_minutes=body.filters.max_minutes,
+        excluded_recipe_ids=excluded_recipe_ids,
+    )
+    recommendation_session.candidates = [*recommendation_session.candidates, *batch_candidates]
     recommendation_session.displayed_fingerprints = [
         *recommendation_session.displayed_fingerprints,
         *[item["content_fingerprint"] for item in candidates],
@@ -421,7 +473,7 @@ def next_recommendation_batch(
     batch = RecommendationBatch(
         session_id=session_id,
         mode="ai" if candidates else "fallback",
-        candidates=candidates or _fallback_candidates(session, user.id),
+        candidates=batch_candidates,
         expires_at=recommendation_session.expires_at,
         notice=AI_NOTICE,
     )

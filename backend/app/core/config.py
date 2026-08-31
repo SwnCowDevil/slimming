@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     ai_api_key: str = ""
     ai_recipe_enabled: bool = False
     ai_timeout_seconds: float = 25.0
-    ai_max_retries: int = 2
+    ai_max_retries: int = 0
     ai_recipe_session_ttl_hours: int = 24
     ai_recipe_user_limit_per_hour: int = 20
     ai_recipe_ip_limit_per_hour: int = 60
