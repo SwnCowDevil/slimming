@@ -19,7 +19,11 @@ const calendarTheme = {
   "--wc-corner-size": "18rpx",
   "--wc-panel-height": "112rpx",
 };
-const calendarStyle = Object.entries(calendarTheme).map(([key, value]) => `${key}:${value}`).join(";");
+const calendarStyle = [
+  "width:100%",
+  "max-width:100%",
+  ...Object.entries(calendarTheme).map(([key, value]) => `${key}:${value}`),
+].join(";");
 const calendarConfig = { view: "week", weekstart: 1, sameChecked: true, darkmode: false };
 const markStyles = {
   full: { color: "#9BCDB2", text: "●" },
