@@ -1,1 +1,73 @@
-<view class="page family"><view class="header"><view><view class="eyebrow">{{mode==='owner'?'由你管理共享范围':'仅显示已授权内容'}}</view><view class="title">家庭</view></view><navigator class="settings" url="/pages/settings/index">设置</navigator></view><view wx:if="{{mode==='owner'}}" class="profile-card"><view><text class="card-title">孕期档案</text><text class="card-sub">{{pregnancy.gestation.week}} 周 {{pregnancy.gestation.day}} 天 · 预产期 {{pregnancy.due_date}}</text></view><navigator url="/pages/privacy/index">隐私说明 ›</navigator></view><view class="section-head"><text>家庭成员</text><button wx:if="{{mode==='owner'}}" bindtap="invite">邀请家属</button></view><view wx:if="{{invitationToken}}" class="invite-note">邀请码已复制。邀请有效期 24 小时，仅可使用一次。</view><view wx:if="{{!members.length}}" class="empty-card">{{mode==='owner'?'还没有家属加入。你可以主动发起邀请，并逐项设置权限。':'当前没有可访问的家庭档案。'}}</view><view class="member-card" wx:for="{{members}}" wx:key="id"><view><text class="member-name">{{mode==='owner'?'家属成员':'孕期档案所有者'}}</text><text class="member-status">{{item.status==='active'?'已加入':'已撤销'}}</text></view><view wx:if="{{mode==='owner' && item.status==='active'}}" class="permission"><button data-member="{{item}}" bindtap="toggleMeal">{{item.canMeal?'已允许代记饮食':'允许代记饮食'}}</button><button class="danger" data-id="{{item.id}}" bindtap="revoke">撤销</button></view></view><view class="section-head task-head"><text>今日家庭任务</text><button wx:if="{{mode==='owner'}}" bindtap="addTask">添加</button></view><view wx:if="{{!tasks.length}}" class="empty-card compact">今天暂无采购或准备任务。</view><view class="task-card" wx:for="{{tasks}}" wx:key="id"><view><text>{{item.title}}</text><small>{{item.status==='completed'?'已完成':'待处理'}}</small></view><button wx:if="{{item.status!=='completed'}}" data-id="{{item.id}}" bindtap="completeTask">完成</button></view><view class="links"><navigator url="/pages/profile/index">个人资料与体重</navigator><navigator url="/pages/data-sources/index">食物数据来源</navigator><navigator url="/pages/privacy/index">隐私与家庭授权</navigator></view></view>
+<view class="page family">
+  <view class="header">
+    <view>
+      <view class="eyebrow">{{mode==='owner'?'由你管理共享范围':'仅显示已授权内容'}}</view>
+      <view class="title">家庭</view>
+    </view>
+    <navigator class="settings" url="/pages/settings/index">设置</navigator>
+  </view>
+
+  <view wx:if="{{mode==='owner'}}" class="profile-card">
+    <view>
+      <text class="card-title">孕期档案</text>
+      <text class="card-sub">{{pregnancy.gestation.week}} 周 {{pregnancy.gestation.day}} 天 · 预产期 {{pregnancy.due_date}}</text>
+    </view>
+    <navigator url="/pages/privacy/index">隐私说明 ›</navigator>
+  </view>
+
+  <view class="section-head">
+    <text>家庭成员</text>
+    <button wx:if="{{mode==='owner'}}" bindtap="invite">邀请家属</button>
+  </view>
+  <view wx:if="{{invitationToken}}" class="invite-note">邀请码已复制。邀请有效期 24 小时，仅可使用一次。</view>
+
+  <view wx:if="{{!loading && canJoinFamily}}" class="join-panel">
+    <text class="join-title">使用邀请码加入</text>
+    <text class="join-copy">请向孕期档案所有者获取 24 小时内有效的邀请码。</text>
+    <view class="join-form">
+      <input
+        value="{{joinInvitationToken}}"
+        maxlength="256"
+        placeholder="粘贴邀请码"
+        confirm-type="done"
+        bindinput="inputInvitation"
+        bindconfirm="joinFamily"
+      />
+      <button loading="{{joining}}" disabled="{{joining}}" bindtap="joinFamily">加入家庭</button>
+    </view>
+  </view>
+
+  <view wx:if="{{!loading && !members.length && !canJoinFamily}}" class="empty-card">
+    {{mode==='owner'?'还没有家属加入。你可以主动发起邀请，并逐项设置权限。':'当前没有可访问的家庭档案。'}}
+  </view>
+
+  <view class="member-card" wx:for="{{members}}" wx:key="id">
+    <view>
+      <text class="member-name">{{mode==='owner'?'家属成员':'孕期档案所有者'}}</text>
+      <text class="member-status">{{item.status==='active'?'已加入':'已撤销'}}</text>
+    </view>
+    <view wx:if="{{mode==='owner' && item.status==='active'}}" class="permission">
+      <button data-member="{{item}}" bindtap="toggleMeal">{{item.canMeal?'已允许代记饮食':'允许代记饮食'}}</button>
+      <button class="danger" data-id="{{item.id}}" bindtap="revoke">撤销</button>
+    </view>
+  </view>
+
+  <view class="section-head task-head">
+    <text>今日家庭任务</text>
+    <button wx:if="{{mode==='owner'}}" bindtap="addTask">添加</button>
+  </view>
+  <view wx:if="{{!tasks.length}}" class="empty-card compact">今天暂无采购或准备任务。</view>
+  <view class="task-card" wx:for="{{tasks}}" wx:key="id">
+    <view>
+      <text>{{item.title}}</text>
+      <small>{{item.status==='completed'?'已完成':'待处理'}}</small>
+    </view>
+    <button wx:if="{{item.status!=='completed'}}" data-id="{{item.id}}" bindtap="completeTask">完成</button>
+  </view>
+
+  <view class="links">
+    <navigator url="/pages/profile/index">个人资料与体重</navigator>
+    <navigator url="/pages/data-sources/index">食物数据来源</navigator>
+    <navigator url="/pages/privacy/index">隐私与家庭授权</navigator>
+  </view>
+</view>
