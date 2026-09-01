@@ -28,11 +28,19 @@ function buildPregnancyWeightOptions(points, width, height) {
   ], extra: { lineStyle: "curve" } };
 }
 
-function buildPregnancyFactsOptions(summary, width, height) {
-  const source = Array.isArray(summary) ? summary[0] || {} : summary || {};
-  return { ...base(width, height), type: "column", categories: ["记录天数", "食物类别"], series: [
-    { name: "周期记录", color: "#F2C48D", data: [source.recorded_day_count || 0, source.food_category_diversity || 0] },
-  ], extra: { column: { width: 28 } } };
+function buildPregnancyCalorieOptions(days, width, height) {
+  if (!days || !days.some((day) => day.consumed_kcal !== null && typeof day.consumed_kcal !== "undefined")) return null;
+  return {
+    ...base(width, height),
+    type: "column",
+    enableScroll: days.length > 14,
+    categories: days.map((day) => day.date),
+    series: [
+      { name: "摄入", color: palette.orange, data: days.map((day) => day.consumed_kcal) },
+    ],
+    yAxis: { ...base(width, height).yAxis, format: (value) => `${Math.round(value)}` },
+    extra: { column: { width: 14 } },
+  };
 }
 
-module.exports = { palette, buildWeightOptions, buildCalorieOptions, buildPregnancyWeightOptions, buildPregnancyFactsOptions };
+module.exports = { palette, buildWeightOptions, buildCalorieOptions, buildPregnancyWeightOptions, buildPregnancyCalorieOptions };

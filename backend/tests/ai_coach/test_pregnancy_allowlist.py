@@ -1,4 +1,5 @@
 from datetime import date, timedelta
+from pathlib import Path
 from types import SimpleNamespace
 
 from sqlalchemy import func, select
@@ -59,20 +60,36 @@ class UnavailableReflectionProvider:
 
 def test_weekly_reflection_uses_ai_with_only_server_summary_facts(client, auth_headers):
     create_pregnancy(client, auth_headers)
+    fixture = Path(__file__).parents[1] / "foods" / "fixtures" / "tka_sample.json"
+    client.post(
+        "/api/v1/admin/foods/import",
+        headers=auth_headers,
+        json={"path": str(fixture), "version": "fixture-reflection", "dry_run": False},
+    )
+    client.post(
+        "/api/v1/meals",
+        headers={**auth_headers, "Idempotency-Key": "historical-reflection-meal"},
+        json={
+            "meal_date": "2026-08-19",
+            "meal_type": "breakfast",
+            "source_food_id": "8535",
+            "grams": 100,
+        },
+    )
     provider = ReflectionProvider()
     client.app.state.ai_recipe_provider = provider
 
     response = client.post(
         "/api/v1/ai/weekly-reflections",
         headers=auth_headers,
-        json={"period": 7, "context": {"pregnancy": True}},
+        json={"period": 7, "end_date": "2026-08-19", "context": {"pregnancy": True}},
     )
 
     assert response.status_code == 201
     assert response.json()["response_text"].startswith("这 7 天")
     assert response.json()["model_name"] == "fake-deepseek"
     assert provider.requests == [
-        {"period": 7, "facts": ["本周期记录饮食 0 天", "覆盖 0 个食物类别"]}
+        {"period": 7, "facts": ["本周期记录饮食 1 天", "覆盖 1 个食物类别"]}
     ]
 
 

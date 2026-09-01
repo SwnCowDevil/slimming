@@ -16,6 +16,11 @@ class CalorieDay(BaseModel):
     budget_kcal: int | None
 
 
+class PregnancyCalorieDay(BaseModel):
+    date: date
+    consumed_kcal: float | None
+
+
 class MacroAchievement(BaseModel):
     protein_percent: float
     carbohydrate_percent: float
@@ -35,6 +40,7 @@ class PregnancyAnalyticsSummary(BaseModel):
     product_mode: Literal["pregnancy"] = "pregnancy"
     period: int
     weight_points: list[WeightPoint]
+    calorie_days: list[PregnancyCalorieDay]
     recorded_day_count: int
     food_category_diversity: int
     facts: list[str]

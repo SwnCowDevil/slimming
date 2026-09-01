@@ -45,6 +45,7 @@ class AiDraftRead(BaseModel):
 class PregnancyAiRequest(BaseModel):
     context: AiContext = Field(default_factory=lambda: AiContext(pregnancy=True))
     period: Literal[7, 30, 90] = 7
+    end_date: date | None = None
     current_recipe_id: str | None = None
 
 

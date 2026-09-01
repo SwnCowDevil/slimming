@@ -8,6 +8,7 @@ from app.analytics.schemas import (
     AnalyticsSummary,
     CalorieDay,
     MacroAchievement,
+    PregnancyCalorieDay,
     PregnancyAnalyticsSummary,
     WeightPoint,
 )
@@ -58,6 +59,18 @@ def build_pregnancy_summary(
             session.scalars(select(Food.food_group).where(Food.id.in_(food_ids))).all()
         )
     recorded_days = len({meal.meal_date for meal in meals})
+    calories_by_date: dict[date, float] = {}
+    for meal in meals:
+        calories_by_date[meal.meal_date] = calories_by_date.get(meal.meal_date, 0.0) + float(
+            meal.energy_kcal
+        )
+    calorie_days = [
+        PregnancyCalorieDay(
+            date=day,
+            consumed_kcal=(round(calories_by_date[day], 2) if day in calories_by_date else None),
+        )
+        for day in (start + timedelta(days=index) for index in range(period))
+    ]
     points = build_weight_points(weights)
     facts = [
         f"本周期记录饮食 {recorded_days} 天",
@@ -67,6 +80,7 @@ def build_pregnancy_summary(
     return PregnancyAnalyticsSummary(
         period=period,
         weight_points=points,
+        calorie_days=calorie_days,
         recorded_day_count=recorded_days,
         food_category_diversity=len(categories),
         facts=facts,

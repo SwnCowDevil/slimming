@@ -174,13 +174,18 @@ def create_weekly_reflection(
     context = body.context.model_copy(update={"pregnancy": True})
     safety = evaluate_safety(context, workflow="weekly_reflection")
     candidate: dict = {}
-    input_range = {"period": body.period, "source": "analytics-summary"}
+    summary_end_date = body.end_date or date.today()
+    input_range = {
+        "period": body.period,
+        "end_date": summary_end_date.isoformat(),
+        "source": "analytics-summary",
+    }
     response_text = None
     if safety.action == "allow_limited":
         client_ip = request.client.host if request.client is not None else "unknown"
         request_ip_hash = hash_client_ip(client_ip, settings.jwt_secret)
         reserve_reflection_rate_limit(session, current_user.id, request_ip_hash, settings)
-        summary = build_summary(session, current_user.id, body.period, date.today())
+        summary = build_summary(session, current_user.id, body.period, summary_end_date)
         facts = list(getattr(summary, "facts", []))
         candidate = {"period": body.period, "facts": facts}
         response_text = "；".join(facts) if facts else "本周期暂无足够记录可供回顾。"

@@ -1,1 +1,31 @@
-<view class="page analysis"><view class="header"><view><view class="eyebrow">只展示已记录事实</view><view class="title">趋势</view></view><button loading="{{reflecting}}" bindtap="reflect">周期回顾</button></view><view class="periods"><view wx:for="{{periods}}" wx:key="*this" data-period="{{item}}" bindtap="changePeriod" class="{{period===item?'active':''}}">{{item}} 天</view></view><health-chart title="体重记录" type="pregnancy-weight" points="{{weightPoints}}"/><health-chart title="记录概览" type="facts" points="{{factsPoints}}"/><view class="facts"><view wx:for="{{facts}}" wx:key="*this">{{item}}</view></view><view class="insight"><text class="label">本周期说明</text><text>{{insight}}</text></view><view class="disclaimer">趋势只用于整理个人记录，不提供孕期体重目标、疾病判断或产检结论。</view></view>
+<view class="page analysis">
+  <view class="header">
+    <view class="title">趋势</view>
+    <button loading="{{reflecting}}" bindtap="reflect">周期回顾</button>
+  </view>
+
+  <view class="filters">
+    <picker mode="date" value="{{endDate}}" end="{{today}}" bindchange="changeEndDate">
+      <view class="date-picker">
+        <text class="date-caption">截止日期</text>
+        <text class="date-value">{{endDate}}</text>
+      </view>
+    </picker>
+    <view class="periods">
+      <view wx:for="{{periods}}" wx:key="*this" data-period="{{item}}" bindtap="changePeriod" class="{{period===item?'active':''}}">{{item}}天</view>
+    </view>
+  </view>
+
+  <health-chart title="体重记录" type="pregnancy-weight" points="{{weightPoints}}" />
+  <health-chart title="每日摄入" type="pregnancy-calorie" points="{{caloriePoints}}" />
+  <view class="chart-note">仅统计已记录的饮食，未记录的日期会留空。</view>
+
+  <view class="facts">
+    <view wx:for="{{facts}}" wx:key="*this">{{item}}</view>
+  </view>
+  <view class="insight">
+    <text class="label">本周期说明</text>
+    <text>{{insight}}</text>
+  </view>
+  <view class="disclaimer">趋势只用于整理个人记录，不提供孕期体重目标、疾病判断或产检结论。</view>
+</view>
