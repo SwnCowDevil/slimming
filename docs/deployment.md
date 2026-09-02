@@ -32,7 +32,7 @@ sudo install -m 600 deploy/backend.env.example /etc/slimming/slimming-api.env
 
 ## 3. 数据库迁移与后端部署
 
-当前迁移头为 `0014_recipe_import_fingerprint`。发布顺序：
+当前迁移头为 `0015_ai_coach_rate_limit`。发布顺序：
 
 1. 备份数据库及媒体目录。
 2. 在生产数据副本执行 `alembic upgrade head` 并验证。
@@ -46,10 +46,16 @@ sudo install -m 600 deploy/backend.env.example /etc/slimming/slimming-api.env
 
 ```sh
 ./scripts/deploy-backend.sh --dry-run
-DEPLOY_HOST=服务器地址 DEPLOY_USER=deploy DEPLOY_DIR=/opt/slimming ./scripts/deploy-backend.sh --execute
+DEPLOY_HOST=服务器地址 \
+DEPLOY_USER=deploy \
+DEPLOY_DIR=/opt/slimming \
+DEPLOY_SSH_KEY=.local/slimming-deploy-key \
+./scripts/deploy-backend.sh --execute
 ```
 
-生产容器监听宿主机 `127.0.0.1:8001`，与 travelling 使用的 `127.0.0.1:8000` 隔离。SQLite 和媒体目录保存在 `/opt/slimming/backend/data`。将 `deploy/Caddyfile.example` 中的站点块合并到服务器 Caddyfile 后，先执行 `caddy validate`，再平滑重载并验证 `https://slimming.sunks.cc/health`。
+目标服务器需预先准备可执行的 `/opt/slimming/.runtime/python3.12/bin/python3.12`。运行时独立保存在 slimming 目录，不随每次代码包上传，也不共享 travelling 的容器、配置或数据。构建基础系统镜像来自阿里云镜像仓库，Python 依赖通过阿里云 PyPI 镜像安装，因此不依赖目标服务器访问 Docker Hub。
+
+生产容器监听宿主机 `127.0.0.1:8001`，与 travelling 使用的 `127.0.0.1:8000` 隔离。SQLite 和媒体目录保存在 `/opt/slimming/backend/data`。将 `deploy/Caddyfile.example` 中的站点块合并到服务器 Caddyfile 后，先执行 `caddy validate`，再平滑重载。阿里云 DNS 还需添加 `slimming.sunks.cc` 指向服务器公网 IP 的 A 记录，解析生效后验证 `https://slimming.sunks.cc/health`。
 
 横向扩展前应迁移到独立 PostgreSQL。服务回滚必须先确认旧后端兼容新 schema；无法确认时停止写入并从发布前备份恢复，不能在活跃写入期间直接降级数据库。
 

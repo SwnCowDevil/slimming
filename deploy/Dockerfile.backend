@@ -1,9 +1,16 @@
-FROM python:3.12-slim
+FROM registry.cn-hangzhou.aliyuncs.com/alinux/alinux3:latest
+
+COPY .runtime/python3.12 /opt/python3.12
+
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+ENV PATH="/opt/python3.12/bin:${PATH}"
+
 WORKDIR /app
 COPY backend /app
-RUN pip install --no-cache-dir /app
-RUN groupadd --gid 10001 slimming && useradd --uid 10001 --gid slimming --create-home --shell /usr/sbin/nologin slimming
+RUN python3.12 -m pip install --no-cache-dir \
+    --index-url https://mirrors.aliyun.com/pypi/simple/ \
+    /app
+RUN groupadd --gid 10001 slimming && useradd --uid 10001 --gid slimming --create-home --shell /sbin/nologin slimming
 RUN mkdir -p /app/data && chown -R slimming:slimming /app/data
 USER slimming
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]

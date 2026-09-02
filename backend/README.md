@@ -47,6 +47,7 @@ DeepSeek 只接收粗粒度孕期阶段、已保存的过敏/忌口和本次推�
 7. `0012_ai_recipe_library`
 8. `0013_recipe_steps`
 9. `0014_recipe_import_fingerprint`
+10. `0015_ai_coach_rate_limit`
 
 生产发布前备份数据库，并在生产副本上验证升级。发布顺序是：构建新镜像 → 运行迁移 → 迁移成功后启动新服务 → 验证健康检查 → 发布小程序。服务回滚前必须确认旧版本可读取升级后的兼容字段；若必须回退数据库，先停写并从备份恢复或按已验证的 Alembic downgrade 执行。
 
