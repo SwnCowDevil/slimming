@@ -48,6 +48,16 @@ test("recipe tab keeps its card flow and offers a lightweight AI entry", () => {
   assert.match(logic, /onReachBottom/);
 });
 
+test("recipe recommendation button stays on one line without being squeezed", () => {
+  const styles = read("../pages/recipes/index.wxss");
+  const buttonRule = styles.match(/\.ai-entry button\s*\{([^}]*)\}/)?.[1] || "";
+
+  assert.match(buttonRule, /white-space\s*:\s*nowrap/i);
+  assert.match(buttonRule, /flex-shrink\s*:\s*0/i);
+  assert.match(buttonRule, /width\s*:\s*auto/i);
+  assert.doesNotMatch(buttonRule, /(?:^|;)width\s*:\s*142rpx/i);
+});
+
 test("AI recipe page has filters, free text, next batch and adjustment actions", () => {
   const markup = read("../pages/ai-recipes/index.wxml");
   const logic = read("../pages/ai-recipes/index.js");
