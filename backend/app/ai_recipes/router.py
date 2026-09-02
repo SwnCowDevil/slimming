@@ -1,0 +1,73 @@
+from fastapi import APIRouter, Depends, Header, Request, Response, status
+from sqlalchemy.orm import Session
+
+from app.ai_recipes.provider import AiRecipeProvider
+from app.ai_recipes.schemas import RecommendationBatch, RecommendationCreateRequest
+from app.ai_recipes.service import create_recommendation_session, next_recommendation_batch, save_candidate
+from app.auth.models import User
+from app.auth.service import get_current_user
+from app.core.config import Settings, get_settings
+from app.db.session import get_session
+from app.recipes.schemas import RecipeRead
+
+
+router = APIRouter(prefix="/api/v1/ai/recipe-recommendations", tags=["ai-recipes"])
+candidate_router = APIRouter(prefix="/api/v1/ai/recipe-candidates", tags=["ai-recipes"])
+
+
+def _provider(request: Request, settings: Settings) -> AiRecipeProvider | None:
+    return getattr(request.app.state, "ai_recipe_provider", None)
+
+
+@router.post("", response_model=RecommendationBatch, status_code=status.HTTP_201_CREATED)
+def recommend_recipes(
+    body: RecommendationCreateRequest,
+    request: Request,
+    idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=128),
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> RecommendationBatch:
+    client_ip = request.client.host if request.client is not None else "unknown"
+    return create_recommendation_session(
+        session,
+        current_user,
+        body,
+        idempotency_key,
+        client_ip,
+        settings,
+        _provider(request, settings),
+    )
+
+
+@router.post("/{session_id}/next", response_model=RecommendationBatch)
+def next_recipes(
+    session_id: str,
+    request: Request,
+    idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=128),
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> RecommendationBatch:
+    client_ip = request.client.host if request.client is not None else "unknown"
+    return next_recommendation_batch(
+        session,
+        current_user,
+        session_id,
+        idempotency_key,
+        client_ip,
+        settings,
+        _provider(request, settings),
+    )
+
+
+@candidate_router.post("/{candidate_id}/save", response_model=RecipeRead)
+def save_recipe_candidate(
+    candidate_id: str,
+    response: Response,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+) -> RecipeRead:
+    recipe = save_candidate(session, current_user.id, candidate_id)
+    response.status_code = status.HTTP_201_CREATED if recipe.was_created else status.HTTP_200_OK
+    return RecipeRead.model_validate(recipe)

@@ -1,0 +1,22 @@
+<view class="page today">
+  <view class="header">
+    <view><view class="eyebrow">{{dateLabel}}</view><view class="title greeting">{{gestationLabel}}</view></view>
+    <button class="ai-button" bindtap="openAi">AI 回顾</button>
+  </view>
+  <view class="summary-card">
+    <view><text class="summary-label">今天先照顾好自己</text><text class="summary-value">{{feelingCodes.length?'已记录今日感受':'今天感觉怎么样？'}}</text></view>
+    <view class="weight" bindtap="recordWeight"><text>{{currentWeightKg||'—'}}</text><small>kg · 记录体重</small></view>
+  </view>
+  <scroll-view scroll-x class="feelings"><view wx:for="{{wellbeingOptions}}" wx:key="code" data-code="{{item.code}}" bindtap="toggleFeeling" class="feeling {{item.selected?'active':''}}">{{item.label}}</view></scroll-view>
+  <view class="quick"><button class="quick-main" bindtap="estimateFood">食物估重</button><button bindtap="recordWeight">记录体重</button></view>
+  <view class="section-head"><text>接下来的一餐</text><text>已记录 {{completedMealCount}}/{{totalMealCount}} 餐次</text></view>
+  <pregnancy-meal wx:if="{{focusSection}}" section="{{focusSection}}" bind:add="addMeal" bind:edittime="editTime" />
+  <view wx:if="{{otherSections.length}}" class="other-meals">
+    <view class="other-meal" wx:for="{{otherSections}}" wx:key="id">
+      <text class="other-time" data-section="{{item}}" bindtap="editCompactTime">{{item.time}}</text>
+      <view class="other-copy"><text>{{item.title}}</text><small>{{item.items.length?item.items.length+'项已记录':'待记录'}}</small></view>
+      <button data-section="{{item}}" bindtap="addCompactMeal">{{item.items.length?'再记':'记录'}}</button>
+    </view>
+  </view>
+  <view class="ai-note" bindtap="openAi"><text class="ai-tag">AI</text><text>{{aiTip}}</text><text class="arrow">›</text></view>
+</view>

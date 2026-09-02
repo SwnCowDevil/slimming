@@ -1,0 +1,1 @@
+.bars{display:flex;flex-direction:column;gap:20rpx;margin:26rpx 6rpx 4rpx}.row{display:grid;grid-template-columns:88rpx 1fr 112rpx;gap:16rpx;align-items:center;color:#6F787E;font-size:22rpx}.track{height:10rpx;background:#DDE8E0;border-radius:999rpx;overflow:hidden}.fill{height:100%;background:#78A992;border-radius:999rpx}.value{text-align:right;font-family:"DIN Alternate"}

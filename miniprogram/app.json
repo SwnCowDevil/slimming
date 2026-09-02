@@ -1,0 +1,46 @@
+{
+  "pages": [
+    "pages/onboarding/welcome/index",
+    "pages/onboarding/pregnancy/index",
+    "pages/today/index",
+    "pages/record/index",
+    "pages/recipes/index",
+    "pages/analysis/index",
+    "pages/family/index",
+    "pages/profile/index",
+    "pages/recipe-detail/index",
+    "pages/ai-recipes/index",
+    "pages/recipe-confirm/index",
+    "pages/food-search/index",
+    "pages/ai-coach/index",
+    "pages/bmi/index",
+    "pages/bmr/index",
+    "pages/food-estimate/index",
+    "pages/dietitians/index",
+    "pages/settings/index",
+    "pages/privacy/index",
+    "pages/data-sources/index"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#F9FAF7",
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "孕食记",
+    "backgroundColor": "#F6F8F5",
+    "backgroundTextStyle": "light"
+  },
+  "tabBar": {
+    "color": "#8B9A90",
+    "selectedColor": "#86B6DC",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "white",
+    "list": [
+      { "pagePath": "pages/today/index", "text": "今日" },
+      { "pagePath": "pages/record/index", "text": "记录" },
+      { "pagePath": "pages/recipes/index", "text": "食谱" },
+      { "pagePath": "pages/analysis/index", "text": "趋势" },
+      { "pagePath": "pages/family/index", "text": "家庭" }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

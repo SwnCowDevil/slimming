@@ -1,0 +1,20 @@
+<view class="page record">
+  <record-calendar marks="{{marks}}" bind:datechange="dateChange" bind:viewchange="viewChange" />
+  <view class="quick"><button bindtap="search">搜索食物</button><button bindtap="recent">最近吃过</button><button bindtap="estimateFood">食物估重</button></view>
+  <view class="record-summary">
+    <view><text class="summary-date">{{selectedDate}}</text><text class="summary-label">当日记录</text></view>
+    <view class="summary-facts"><text>{{recordCount}} 项</text><text wx:if="{{recordCount}}">{{totalKcal}} kcal</text></view>
+  </view>
+  <view class="date-title"><text>记录明细</text><text>{{recordCount?'按实际记录时间展示':'还没有记录'}}</text></view>
+  <view wx:if="{{timelineGroups.length}}" class="timeline">
+    <view class="timeline-group" wx:for="{{timelineGroups}}" wx:key="id">
+      <view class="group-head"><view><text class="group-time">{{item.time}}</text><text class="group-name">{{item.title}}</text></view><text class="group-kcal">{{item.kcal}} kcal</text></view>
+      <view class="record-row" wx:for="{{item.items}}" wx:for-item="food" wx:key="id">
+        <view><text class="food-name">{{food.food_name}}</text><text class="food-meta">{{food.grams}} 克 · {{food.energy_kcal}} kcal{{food.nutrition_source==='ai_estimated'?' · AI 估算':''}}</text></view>
+        <text class="actor">{{food.created_by_user_id===food.subject_user_id?'本人记录':'家人代记'}}</text>
+      </view>
+      <button class="group-add" data-section="{{item}}" bindtap="addToGroup">＋ 继续记录</button>
+    </view>
+  </view>
+  <view wx:else class="empty-record"><text>这一天还没有饮食记录</text><small>可以搜索食物，或参考估重后确认份量</small><button bindtap="search">添加第一条记录</button></view>
+</view>

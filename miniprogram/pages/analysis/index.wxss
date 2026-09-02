@@ -1,0 +1,137 @@
+.analysis {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header .title {
+  margin: 0;
+  font-size: 36rpx;
+  font-weight: 500;
+}
+
+.header button {
+  margin: 0;
+  height: 62rpx;
+  padding: 0 22rpx;
+  background: #fff3df;
+  color: #91633b;
+  font-size: 22rpx;
+  font-weight: 400;
+  border-radius: 999rpx;
+}
+
+.header button::after {
+  border: 0;
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: 228rpx 1fr;
+  gap: 16rpx;
+  align-items: stretch;
+}
+
+.date-picker {
+  box-sizing: border-box;
+  min-height: 78rpx;
+  padding: 10rpx 18rpx;
+  border-radius: 20rpx;
+  background: #eef6fb;
+  color: #61798b;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.date-caption {
+  font-size: 18rpx;
+  line-height: 1.2;
+  color: #8ba0ae;
+}
+
+.date-value {
+  margin-top: 4rpx;
+  font-size: 23rpx;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.periods {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  padding: 7rpx;
+  background: #fff6e9;
+  border-radius: 22rpx;
+  text-align: center;
+}
+
+.periods view {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 64rpx;
+  border-radius: 17rpx;
+  color: #a18e7b;
+  font-size: 22rpx;
+}
+
+.periods .active {
+  background: #fff;
+  color: #7d674f;
+  box-shadow: 0 4rpx 14rpx rgba(130, 102, 70, 0.06);
+}
+
+.chart-note {
+  margin-top: -12rpx;
+  padding: 0 12rpx;
+  color: #7f8d86;
+  font-size: 20rpx;
+  line-height: 1.55;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14rpx;
+}
+
+.facts view {
+  padding: 22rpx;
+  background: #f5faf7;
+  border-radius: 22rpx;
+  color: #65766d;
+  font-size: 22rpx;
+}
+
+.insight {
+  padding: 26rpx;
+  background: #fff8ec;
+  border-radius: 26rpx;
+  color: #6d746f;
+  font-size: 23rpx;
+  line-height: 1.65;
+}
+
+.insight text {
+  display: block;
+}
+
+.insight .label {
+  margin-bottom: 8rpx;
+  color: #835c38;
+  font-weight: 500;
+}
+
+.disclaimer {
+  padding: 0 14rpx;
+  color: #7e8983;
+  font-size: 20rpx;
+  line-height: 1.6;
+}

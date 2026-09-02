@@ -1,0 +1,25 @@
+<view class="page settings-page">
+  <view class="title">设置</view>
+  <view class="settings-card">
+    <view class="setting-row">
+      <text>数据同步</text>
+      <small>按微信身份对应的内部账户同步</small>
+    </view>
+    <view class="setting-row">
+      <text>AI 记录</text>
+      <small>白名单草稿必须由你确认后才会写入</small>
+    </view>
+    <navigator class="setting-row" url="/pages/privacy/index">
+      <text>隐私说明</text>
+      <small>查看孕期数据与家庭授权边界</small>
+    </navigator>
+  </view>
+
+  <view class="danger-zone">
+    <view>
+      <text>删除账户</text>
+      <small>永久删除账户、孕期档案、饮食、体重、家庭授权和上传内容</small>
+    </view>
+    <button bindtap="deleteAccount">删除</button>
+  </view>
+</view>

@@ -1,0 +1,6 @@
+.option { padding:28rpx 32rpx; }
+.option text { color:var(--color-muted); font-size:24rpx; }
+.option.selected { background:var(--color-primary-soft); border-color:var(--color-primary); }
+.small { font-size:32rpx; margin-top:16rpx; }
+.picker { display:flex; align-items:center; }
+.button-primary { margin-top:24rpx; width:100%; }

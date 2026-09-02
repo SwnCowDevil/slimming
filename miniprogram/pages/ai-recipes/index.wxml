@@ -1,0 +1,31 @@
+<view class="page ai-page">
+  <view class="eyebrow">AI 食谱助手</view>
+  <view class="title">今天想吃什么？</view>
+  <view class="subtitle">只需描述这一餐，孕期阶段与忌口由服务端安全匹配。</view>
+
+  <view class="form-card">
+    <view class="field-label">餐次</view>
+    <view class="chips"><view wx:for="{{mealTypes}}" wx:key="value" class="chip {{mealType===item.value?'active':''}}" data-value="{{item.value}}" bindtap="chooseMeal">{{item.label}}</view></view>
+    <view class="field-label">烹饪时长</view>
+    <view class="chips"><view wx:for="{{durations}}" wx:key="*this" class="chip {{maxMinutes===item?'active':''}}" data-value="{{item}}" bindtap="chooseDuration">{{item}} 分钟内</view></view>
+    <view class="field-label">口味</view>
+    <view class="chips"><view wx:for="{{flavorOptions}}" wx:key="value" class="chip {{flavors[0]===item.value?'active':''}}" data-value="{{item.value}}" bindtap="chooseFlavor">{{item.label}}</view></view>
+    <view class="field-label">已有食材</view>
+    <input class="text-field" value="{{availableIngredientsText}}" bindinput="inputAvailable" placeholder="如：番茄、鸡蛋、豆腐" />
+    <view class="field-label">不想吃的食材</view>
+    <input class="text-field" value="{{dislikedIngredientsText}}" bindinput="inputDisliked" placeholder="只针对这次推荐，可不填" />
+    <view class="field-label">再说具体一点</view>
+    <textarea class="query" value="{{query}}" bindinput="inputQuery" maxlength="300" placeholder="例如：胃口一般，想吃温热清淡、半小时能做好的晚餐" />
+    <button class="recommend" disabled="{{loading}}" bindtap="recommend">{{loading?'正在生成安全建议':'生成 3 道建议'}}</button>
+  </view>
+
+  <view wx:if="{{status==='loading'}}" class="state">正在结合你的条件生成食谱…</view>
+  <view wx:if="{{status==='error'}}" class="state error"><text>{{errorMessage}}</text><button bindtap="recommend">重新尝试</button></view>
+  <view wx:if="{{status==='empty'}}" class="state">暂时没有合适结果，请调整条件。</view>
+  <view wx:if="{{status==='fallback'}}" class="fallback-note">AI 暂不可用，先为你展示已审核基础食谱。</view>
+  <view wx:if="{{candidates.length}}" class="results">
+    <recipe-card wx:for="{{candidates}}" wx:key="id" recipe="{{item}}" showSave="{{item.sourceType==='ai'}}" bind:save="save" bind:open="open" />
+    <view class="result-actions"><button class="next" disabled="{{loading}}" bindtap="nextBatch">换一批</button><button class="adjust" bindtap="adjust">调整条件</button></view>
+    <view class="notice">{{notice || 'AI 推荐仅供饮食安排参考，不替代医生建议。'}}</view>
+  </view>
+</view>

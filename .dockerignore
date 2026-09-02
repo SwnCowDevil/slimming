@@ -1,0 +1,11 @@
+.git
+.local
+backend/.env
+backend/.venv
+backend/data
+backend/.pytest_cache
+backend/**/__pycache__
+docs
+miniprogram
+prototype
+superdesign

@@ -1,0 +1,14 @@
+services:
+  slimming-api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.backend
+    image: slimming-api:local
+    container_name: slimming-api
+    env_file:
+      - ${DEPLOY_ENV_FILE:-/etc/slimming/slimming-api.env}
+    volumes:
+      - ${DEPLOY_DATA_DIR:-/opt/slimming/backend/data}:/app/data:rw
+    ports:
+      - "127.0.0.1:${DEPLOY_BIND_PORT:-8001}:8000"
+    restart: unless-stopped

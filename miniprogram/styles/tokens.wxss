@@ -1,0 +1,16 @@
+page {
+  --color-primary: #9BCDB2;
+  --color-primary-soft: #EAF6EF;
+  --color-page: #F8FAF8;
+  --color-warm: #F7C98B;
+  --color-orange: #E8862D;
+  --color-blue-soft: #EDF5FA;
+  --color-blue: #86B6DC;
+  --color-text: #59645E;
+  --color-muted: #77827C;
+  --color-caption: #98A39D;
+  --color-border: #E3EBE5;
+  --color-card: #FFFFFF;
+  --radius-card: 40rpx;
+  --radius-control: 28rpx;
+}

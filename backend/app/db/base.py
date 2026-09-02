@@ -1,0 +1,22 @@
+from sqlalchemy.orm import DeclarativeBase
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+# Import ORM models so metadata is complete for Alembic and tests.
+from app.auth import models as auth_models  # noqa: E402,F401
+from app.profiles import models as profile_models  # noqa: E402,F401
+from app.foods import models as food_models  # noqa: E402,F401
+from app.meals import models as meal_models  # noqa: E402,F401
+from app.weights import models as weight_models  # noqa: E402,F401
+from app.habits import models as habit_models  # noqa: E402,F401
+from app.recipes import models as recipe_models  # noqa: E402,F401
+from app.ai_coach import models as ai_models  # noqa: E402,F401
+from app.dietitians import models as dietitian_models  # noqa: E402,F401
+from app.media import models as media_models  # noqa: E402,F401
+from app.pregnancies import models as pregnancy_models  # noqa: E402,F401
+from app.family import models as family_models  # noqa: E402,F401
+from app.meal_plans import models as meal_plan_models  # noqa: E402,F401
+from app.ai_recipes import models as ai_recipe_models  # noqa: E402,F401

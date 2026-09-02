@@ -1,0 +1,1 @@
+<view class="tip"><view class="label">AI 今日建议</view><view class="copy">{{text}}</view><view class="source">{{source}}</view></view>

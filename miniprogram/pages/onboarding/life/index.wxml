@@ -1,0 +1,7 @@
+<view class="page stack">
+  <view class="eyebrow">3 / 4</view><view class="title">你的日常活动量</view>
+  <view wx:for="{{activities}}" wx:key="value" data-value="{{item.value}}" bindtap="select" class="option card {{activity===item.value?'selected':''}}"><view>{{item.label}}</view><text>{{item.desc}}</text></view>
+  <view class="title small">外食频率</view>
+  <picker mode="selector" range="{{eatingLabels}}" value="{{eatingIndex}}" bindchange="changeEating"><view class="field picker">{{eatingLabels[eatingIndex]}}</view></picker>
+  <button class="button-primary" bindtap="next">生成计划</button>
+</view>

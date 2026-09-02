@@ -1,0 +1,1 @@
+{ "navigationBarTitleText": "趋势分析", "usingComponents": { "health-chart": "/components/health-chart/index", "nutrient-bars": "/components/nutrient-bars/index" } }

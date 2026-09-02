@@ -1,0 +1,7 @@
+.welcome { display:flex; flex-direction:column; padding-top: 120rpx; }
+.brand { color: var(--color-primary); font-size: 28rpx; font-weight: 600; letter-spacing: 8rpx; }
+.hero-card { margin-top: 44rpx; padding: 48rpx 40rpx; background: linear-gradient(145deg, #fff, #F2F8F4); }
+.promise { margin: 44rpx 8rpx; color: var(--color-muted); font-size: 26rpx; }
+.promise view { padding-left: 24rpx; border-left: 6rpx solid var(--color-warm); }
+.button-primary { margin-top:auto; width:100%; }
+.privacy { margin:24rpx 28rpx 0; text-align:center; color:var(--color-caption); font-size:22rpx; line-height:1.6; }

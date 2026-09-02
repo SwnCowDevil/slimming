@@ -1,0 +1,6 @@
+<view class="page stack">
+  <view class="eyebrow">4 / 4</view><view class="title">准备好开始了</view>
+  <view class="card summary"><view>每日热量与三大营养目标</view><text>将根据你的身体信息与活动量动态计算，不使用极低热量方案。</text></view>
+  <view class="card summary"><view>数据可追溯</view><text>正式饮食记录只使用 TKA 数据或你确认的自定义食物。</text></view>
+  <button class="button-primary" loading="{{submitting}}" bindtap="finish">进入今日</button>
+</view>

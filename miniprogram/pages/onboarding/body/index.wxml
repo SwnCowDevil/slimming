@@ -1,0 +1,9 @@
+<view class="page stack">
+  <view class="eyebrow">2 / 4</view><view class="title">了解你的基础情况</view>
+  <view class="segmented"><view data-value="female" bindtap="selectSex" class="{{sex==='female'?'active':''}}">女</view><view data-value="male" bindtap="selectSex" class="{{sex==='male'?'active':''}}">男</view></view>
+  <view class="field-row"><text>年龄</text><input class="field" type="number" value="{{age}}" data-field="age" bindinput="input"/><text>岁</text></view>
+  <view class="field-row"><text>身高</text><input class="field" type="digit" value="{{heightCm}}" data-field="heightCm" bindinput="input"/><text>cm</text></view>
+  <view class="field-row"><text>当前体重</text><input class="field" type="digit" value="{{weightKg}}" data-field="weightKg" bindinput="input"/><text>kg</text></view>
+  <view class="field-row"><text>目标体重</text><input class="field" type="digit" value="{{targetWeightKg}}" data-field="targetWeightKg" bindinput="input"/><text>kg</text></view>
+  <button class="button-primary" bindtap="next">下一步</button>
+</view>

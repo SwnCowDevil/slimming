@@ -1,0 +1,12 @@
+{
+  "description": "孕食记原生微信小程序",
+  "miniprogramRoot": "./",
+  "compileType": "miniprogram",
+  "appid": "touristappid",
+  "setting": {
+    "es6": true,
+    "minified": true,
+    "postcss": true,
+    "packNpmManually": false
+  }
+}

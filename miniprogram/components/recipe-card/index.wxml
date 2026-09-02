@@ -1,0 +1,9 @@
+<view class="recipe" bindtap="open">
+  <image wx:if="{{recipe.image}}" class="photo" mode="aspectFill" src="{{recipe.image}}" />
+  <view class="content">
+    <view class="badges"><text>{{recipe.sourceLabel}}</text><text>{{recipe.nutritionLabel}}</text></view>
+    <view class="row"><text class="name">{{recipe.title}}</text><text class="kcal">{{recipe.kcalLabel}}</text></view>
+    <view class="meta">{{recipe.minutes}} 分钟 · {{recipe.subtitle || recipe.summary}}</view>
+    <button wx:if="{{showSave}}" class="save {{recipe.saved?'saved':''}}" disabled="{{recipe.saved || recipe.saving}}" catchtap="save">{{recipe.saving?'正在加入':(recipe.saved?'已加入我的食谱':'收藏到我的食谱')}}</button>
+  </view>
+</view>

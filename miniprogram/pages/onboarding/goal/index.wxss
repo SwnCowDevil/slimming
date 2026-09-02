@@ -1,0 +1,7 @@
+.options { margin-top: 24rpx; }
+.option { padding: 34rpx; }
+.option.selected { background: var(--color-primary-soft); border-color: var(--color-primary); }
+.option-title { font-size: 32rpx; font-weight: 500; }
+.option-desc { margin-top: 8rpx; color: var(--color-muted); font-size: 24rpx; }
+.button-primary { margin-top: 28rpx; width:100%; }
+.button-primary[disabled] { background:#DCE5DF; color:#fff; }

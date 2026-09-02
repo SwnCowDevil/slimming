@@ -1,0 +1,3 @@
+<view class="calendar-shell">
+  <calendar id="calendar" view="week" weekstart="1" same-checked="true" darkmode="false" custom-nav-bar="false" style="{{calendarStyle}}" marks="{{marks}}" areas="{{areas}}" bindchange="change" bindviewchange="viewChange" />
+</view>

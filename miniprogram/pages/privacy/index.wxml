@@ -1,0 +1,32 @@
+<view class="page privacy-page">
+  <view class="intro">
+    <view class="eyebrow">隐私说明</view>
+    <view class="title">你的孕期记录由你决定如何使用</view>
+    <view class="subtitle">我们只处理完成记录、餐单和家庭协作所需的信息。</view>
+  </view>
+
+  <view class="privacy-list">
+    <view class="copy copy-mint">
+      <view class="copy-title">孕期与日常记录</view>
+      <text>预产期用于计算孕周和匹配对应阶段的已审核内容；体重、饮食、餐次时间和身体感受用于生成个人记录与趋势。不会据此生成孕期减重目标。</text>
+    </view>
+    <view class="copy copy-blue">
+      <view class="copy-title">账户与微信资料</view>
+      <text>小程序通过 wx.login 建立独立内部账户。昵称和头像仅在你主动点击“使用微信资料”后保存，不作为业务数据的身份主键。</text>
+    </view>
+    <view class="copy copy-yellow">
+      <view class="copy-title">家庭共享</view>
+      <text>家属使用自己的微信账户加入。只有你主动邀请并逐项授权后，对方才能查看或代记相应内容；你可以随时撤销，撤销后立即停止访问。</text>
+    </view>
+    <view class="copy copy-orange">
+      <view class="copy-title">AI 与内容边界</view>
+      <text>启用食谱推荐时，服务端只向 DeepSeek 发送粗粒度孕期阶段、你保存的过敏与忌口，以及本次填写的餐次、口味、食材和描述；不会发送 openid、预产期原值、体重历史或既往饮食记录。候选不会自动写入正式记录，收藏和记录都需要你主动确认。</text>
+    </view>
+  </view>
+
+  <view class="rights">
+    <view class="rights-title">你的选择</view>
+    <text>你可以修改孕期档案、结束当前孕期、撤销家庭共享，也可以在“家庭 → 设置”中删除账户及其关联记录。删除前需要再次输入确认，完成后不可恢复。</text>
+  </view>
+  <view class="notice">这些信息只供日常记录参考。如有不适或对孕期饮食存在疑问，请联系医生或具备相应资质的专业人员。</view>
+</view>

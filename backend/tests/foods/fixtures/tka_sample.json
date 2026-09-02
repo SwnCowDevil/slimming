@@ -1,0 +1,27 @@
+{
+  "provider": "tka",
+  "records": [
+    {
+      "source_food_id": "8535",
+      "source_url": "https://tka.nutridata.ee/en/foods/3",
+      "foodex2_code": "A048R#F03.A06JD",
+      "name_en": "Agar, powder",
+      "name_et": "Agar-agar, pulber",
+      "synonyms": ["Algae", "Chinese grass"],
+      "food_group": "Cooking and firming agents",
+      "source_updated_at": "2024-07-31",
+      "household_measures": [{"name": "tsp", "grams": 5}],
+      "nutrients_per_100g": {
+        "energy_kcal": 162,
+        "protein_g": 0.2,
+        "fat_g": 0.3,
+        "carbohydrate_g": 0.1,
+        "fiber_g": 79.4,
+        "salt_g": 0.425
+      },
+      "method_ids": [51],
+      "source_ids": [295]
+    }
+  ],
+  "aliases_zh": {"8535": ["琼脂粉", "寒天粉"]}
+}
