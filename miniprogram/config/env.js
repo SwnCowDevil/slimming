@@ -1,7 +1,7 @@
 const environments = {
   develop: { apiBaseUrl: "http://127.0.0.1:8000", authMode: "wechat" },
-  trial: { apiBaseUrl: "https://api.example.com", authMode: "wechat" },
-  release: { apiBaseUrl: "https://api.example.com", authMode: "wechat" },
+  trial: { apiBaseUrl: "https://slimming.sunks.cc", authMode: "wechat" },
+  release: { apiBaseUrl: "https://slimming.sunks.cc", authMode: "wechat" },
 };
 
 function getEnvironment() {

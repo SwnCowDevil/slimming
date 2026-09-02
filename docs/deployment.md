@@ -9,14 +9,15 @@ cp backend/.env.example backend/.env
 ./scripts/open-wechat-devtools.sh
 ```
 
-本地后端默认监听 `http://127.0.0.1:8000`。端口冲突时使用 `LOCAL_PORT=18080 ./scripts/start-local.sh`，并将 `miniprogram/config/env.js` 的 develop 地址改为同一端口。停止与状态命令也应携带相同的 `LOCAL_PORT`。
+本地后端默认监听 `http://127.0.0.1:8000`。端口冲突时使用 `LOCAL_PORT=18080 ./scripts/start-local.sh`，并将 `miniprogram/config/env.js` 的 develop 地址改为同一端口。停止与状态命令也应携带相同的 `LOCAL_PORT`。体验版与正式版固定访问 `https://slimming.sunks.cc`。
 
 `prototype/` 和 `superdesign/` 是视觉参考，不参与小程序构建、上传或后端部署。
 
 ## 2. 生产配置
 
 ```sh
-cp deploy/backend.env.example deploy/backend.env
+sudo install -d -m 700 /etc/slimming
+sudo install -m 600 deploy/backend.env.example /etc/slimming/slimming-api.env
 ```
 
 必须在服务器安全配置并定期轮换：
@@ -27,11 +28,11 @@ cp deploy/backend.env.example deploy/backend.env
 - `SLIMMING_ADMIN_IMPORT_KEY`
 - 可选的 AI 提供方地址、模型与密钥
 
-`deploy/backend.env` 已被 Git 忽略。生产环境必须关闭开发登录，API 必须经 HTTPS 暴露。小程序代码中只能配置 API 地址，不能存放 AppSecret 或其他服务端密钥。
+`/etc/slimming/slimming-api.env` 只保存在服务器，不能放入项目目录或提交 Git。生产环境必须关闭开发登录，API 必须经 HTTPS 暴露。小程序代码中只能配置 API 地址，不能存放 AppSecret 或其他服务端密钥。
 
 ## 3. 数据库迁移与后端部署
 
-当前迁移头为 `0011_ai_policy`。发布顺序：
+当前迁移头为 `0014_recipe_import_fingerprint`。发布顺序：
 
 1. 备份数据库及媒体目录。
 2. 在生产数据副本执行 `alembic upgrade head` 并验证。
@@ -45,10 +46,12 @@ cp deploy/backend.env.example deploy/backend.env
 
 ```sh
 ./scripts/deploy-backend.sh --dry-run
-DEPLOY_HOST=example.com DEPLOY_USER=deploy DEPLOY_DIR=/opt/slimming ./scripts/deploy-backend.sh --execute
+DEPLOY_HOST=服务器地址 DEPLOY_USER=deploy DEPLOY_DIR=/opt/slimming ./scripts/deploy-backend.sh --execute
 ```
 
-单实例默认使用 Compose 具名卷中的 SQLite。横向扩展前应迁移到独立 PostgreSQL。服务回滚必须先确认旧后端兼容新 schema；无法确认时停止写入并从发布前备份恢复，不能在活跃写入期间直接降级数据库。
+生产容器监听宿主机 `127.0.0.1:8001`，与 travelling 使用的 `127.0.0.1:8000` 隔离。SQLite 和媒体目录保存在 `/opt/slimming/backend/data`。将 `deploy/Caddyfile.example` 中的站点块合并到服务器 Caddyfile 后，先执行 `caddy validate`，再平滑重载并验证 `https://slimming.sunks.cc/health`。
+
+横向扩展前应迁移到独立 PostgreSQL。服务回滚必须先确认旧后端兼容新 schema；无法确认时停止写入并从发布前备份恢复，不能在活跃写入期间直接降级数据库。
 
 ## 4. 微信预览与上传
 
@@ -60,4 +63,4 @@ export WECHAT_APP_ID='wx...'
 ./scripts/upload-miniprogram.sh --version 0.2.0 --description '孕期版' --execute
 ```
 
-脚本会先构建 npm，再调用微信 CLI。上传脚本校验 AppID 一致性；未加 `--execute` 时不会连接或上传。体验版和正式版发布前，必须把 `miniprogram/config/env.js` 中对应 API 地址替换为真实 HTTPS 域名。
+脚本会先构建 npm，再调用微信 CLI。上传脚本校验 AppID 一致性；未加 `--execute` 时不会连接或上传。体验版和正式版自动使用 `https://slimming.sunks.cc`；还需在微信公众平台将该地址加入 request 合法域名。
